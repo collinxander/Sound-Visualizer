@@ -47,7 +47,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.2
+renderer.toneMappingExposure = 1.8 // Increased from 1.2 to 1.8
 document.body.appendChild(renderer.domElement)
 
 // Scene setup
@@ -1019,11 +1019,11 @@ function createSoundWavePlane() {
   return plane
 }
 
-// Enhanced Lighting Setup
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3) // Softens lighting
+// Enhanced Lighting Setup - BRIGHTNESS IMPROVEMENTS
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6) // Increased from 0.3 to 0.6
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2) // Increased from 0.5 to 1.2
 directionalLight.position.set(5, 10, 8)
 directionalLight.castShadow = true
 directionalLight.shadow.mapSize.set(1024, 1024)
@@ -1036,29 +1036,29 @@ directionalLight.shadow.camera.bottom = -10
 directionalLight.shadow.bias = -0.0005
 scene.add(directionalLight)
 
-const fillLight = new THREE.DirectionalLight(0xffffee, 2)
+const fillLight = new THREE.DirectionalLight(0xffffee, 3.5) // Increased from 2 to 3.5
 fillLight.position.set(-5, 5, 15)
 scene.add(fillLight)
 
-const spotLight = new THREE.SpotLight(0xffffff, 30, 100, 0.3, 0.5)
+const spotLight = new THREE.SpotLight(0xffffff, 50, 100, 0.3, 0.5) // Increased from 30 to 50
 spotLight.position.set(0, 15, 0)
 spotLight.castShadow = true
 spotLight.shadow.bias = -0.0001
 scene.add(spotLight)
 
-const rimLight1 = new THREE.PointLight(0xff3300, 8, 2)
+const rimLight1 = new THREE.PointLight(0xff3300, 12, 3) // Increased from 8 to 12, distance from 2 to 3
 rimLight1.position.set(-10, 5, 0)
 scene.add(rimLight1)
 
-const rimLight2 = new THREE.PointLight(0x00aaff, 8, 1)
+const rimLight2 = new THREE.PointLight(0x00aaff, 12, 2) // Increased from 8 to 12, distance from 1 to 2
 rimLight2.position.set(10, 5, 0)
 scene.add(rimLight2)
 
-const movingLight1 = new THREE.PointLight(0xffffff, 0.5, 0.5, 0.5) // Lower intensity, higher distance
+const movingLight1 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5) // Increased intensity from 0.5 to 1.0
 movingLight1.position.set(0, 0, 0)
 scene.add(movingLight1)
 
-const movingLight2 = new THREE.PointLight(0xffffff, 0.5, 0.5, 0.5)
+const movingLight2 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5) // Increased intensity from 0.5 to 1.0
 movingLight2.position.set(0, 0, 0)
 scene.add(movingLight2)
 
@@ -1076,8 +1076,13 @@ movingLight2.castShadow = true
 movingLight2.shadow.mapSize.width = 1024
 movingLight2.shadow.mapSize.height = 1024
 
-const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, 0.6)
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, 1.0) // Increased from 0.6 to 1.0
 scene.add(hemiLight)
+
+// Add a new light specifically for the model
+const modelFillLight = new THREE.DirectionalLight(0xffffff, 2.0)
+modelFillLight.position.set(0, 3, 5)
+scene.add(modelFillLight)
 
 // Initialize scene elements
 starField = createStarField()
@@ -1173,14 +1178,19 @@ function createBurstParticles() {
   return new THREE.Points(burstGeometry, burstMaterial)
 }
 
-// Optimized Post-Processing Setup
+// Optimized Post-Processing Setup - BRIGHTNESS IMPROVEMENTS
 function setupPostProcessing() {
   composer = new EffectComposer(renderer)
 
   const renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
 
-  const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.4, 0.85)
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.7, // Increased from 0.5 - bloom strength
+    0.4, // Radius stays the same
+    0.85, // Threshold stays the same
+  )
   composer.addPass(bloomPass)
 
   const rgbShiftPass = new ShaderPass(RGBShiftShader)
@@ -1188,7 +1198,7 @@ function setupPostProcessing() {
   composer.addPass(rgbShiftPass)
 }
 
-// Load GLTF Model
+// Load GLTF Model - BRIGHTNESS IMPROVEMENTS
 const loader = new GLTFLoader().setPath("public/collinship/")
 loader.load(
   "collin.gltf",
@@ -1199,11 +1209,21 @@ loader.load(
     spaceship.traverse((child) => {
       if (child.isMesh) {
         if (child.material) {
-          child.material.metalness = 0.8
-          child.material.roughness = 0.4 // Adjusted from 0.3 to reduce reflection
-          child.material.envMapIntensity = 1.5
-          child.material.emissive = new THREE.Color(0x333333)
-          child.material.emissiveIntensity = 0.2
+          child.material.metalness = 0.7 // Reduced from 0.8 to reduce reflections
+          child.material.roughness = 0.3 // Reduced from 0.4 to increase shininess
+          child.material.envMapIntensity = 2.0 // Increased from 1.5
+          child.material.emissive = new THREE.Color(0x555555) // Brighter emissive color
+          child.material.emissiveIntensity = 0.5 // Increased from 0.2
+
+          // Brighten the base color if it exists
+          if (child.material.color) {
+            // Get current HSL values
+            const hsl = { h: 0, s: 0, l: 0 }
+            child.material.color.getHSL(hsl)
+            // Increase lightness by 20% but cap at 1.0
+            hsl.l = Math.min(1.0, hsl.l * 1.2)
+            child.material.color.setHSL(hsl.h, hsl.s, hsl.l)
+          }
         }
 
         child.castShadow = true
@@ -1215,22 +1235,33 @@ loader.load(
     spaceship.scale.set(0.5, 0.5, 0.5)
     scene.add(spaceship)
 
-    const engineGlow = new THREE.PointLight(0x00aaff, 8, 4)
+    const engineGlow = new THREE.PointLight(0x00aaff, 12, 6) // Increased from 8 to 12, distance from 4 to 6
     engineGlow.position.set(0, 0.5, 2)
     spaceship.add(engineGlow)
 
     thrusterParticles = createThrusterParticles()
     spaceship.add(thrusterParticles)
 
-    const modelSpotlight = new THREE.SpotLight(0xffffff, 20, 20, 0.5, 0.5)
+    // Enhanced model lighting
+    const modelSpotlight = new THREE.SpotLight(0xffffff, 30, 20, 0.5, 0.5) // Increased from 20 to 30
     modelSpotlight.position.set(0, 10, 5)
     modelSpotlight.target = spaceship
     scene.add(modelSpotlight)
 
-    const modelUplight = new THREE.SpotLight(0xffffee, 10, 15, 0.6, 0.5)
+    const modelUplight = new THREE.SpotLight(0xffffee, 15, 15, 0.6, 0.5) // Increased from 10 to 15
     modelUplight.position.set(0, -2, 5)
     modelUplight.target = spaceship
     scene.add(modelUplight)
+
+    // Add new lights specifically for the model
+    const modelFrontLight = new THREE.SpotLight(0xffffff, 20, 20, 0.5, 0.5)
+    modelFrontLight.position.set(0, 2, 8)
+    modelFrontLight.target = spaceship
+    scene.add(modelFrontLight)
+
+    const modelSideLight = new THREE.PointLight(0xffffee, 10, 10)
+    modelSideLight.position.set(5, 2, 0)
+    spaceship.add(modelSideLight)
 
     const progressContainer = document.getElementById("progress-container")
     if (progressContainer) {
@@ -1569,9 +1600,6 @@ function animate() {
       spaceship.rotation.y = Math.sin(elapsedTime * 0.1) * 0.05 + bassIntensity * 0.1
       spaceship.position.x += (mouseX * 0.5 - spaceship.position.x) * 0.02
       spaceship.rotation.z += (-mouseX * 0.2 - spaceship.rotation.z) * 0.02
-
-      // Make spaceship bounce slightly with the beat
-      spaceship.position * 0.02
 
       // Make spaceship bounce slightly with the beat
       spaceship.position.y = 1.05 + bassAvg * 0.2
