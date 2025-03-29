@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+    <link rel="icon" href="profilepic.jpg" type="image/x-icon">
+		<meta charset="utf-8">
+		<title>MUSIC VISUAL - COLLIN XANDER</title>
+
+		<style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+        background-color: #000;
+        color: #fff;
+      }
+      
+      .icon {
+            text-align: center;
+            padding: 12px;
+            text-decoration: none;
+            font-style: italic;
+            color: red;
+            font-size: 27px;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            animation: glow 1s ease-in-out infinite alternate;
+            z-index: 10;
+            transition: color 0.6s;
+            margin-bottom: 20px;
+        }
+
+        .icon:hover {
+            color: lime;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 5px red; }
+            100% { text-shadow: 0 0 20px red; }
+        }
+
+
+      #heading {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display: none; /* Initially hidden, will be shown after model loads */
+      }
+      
+      h1 {
+        font-size: 3rem;
+        letter-spacing: 0.8rem;
+        margin: 0;
+        text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+        font-weight: 300;
+      }
+      
+      .border {
+        height: 2px;
+        width: 300px;
+        background: linear-gradient(90deg, transparent, #00aaff, transparent);
+        margin: 10px auto;
+        box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+      }
+      
+      #progress-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 100;
+        width: 300px;
+      }
+      
+      #progress {
+        font-size: 1rem;
+        letter-spacing: 0.2rem;
+        margin-bottom: 10px;
+        color: #00aaff;
+      }
+      
+      #progress-bar-container {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      
+      #progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #0088ff, #00aaff);
+        transition: width 0.3s;
+      }
+      
+      .credits {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+         color: #00aaff;
+        font-size: 0.8rem;
+        opacity: 0.5;
+        text-align: right;
+        z-index: 100;
+      }
+      
+      .credits a {
+        color: #00aaff;
+        text-decoration: none;
+      }
+      
+      .credits a:hover {
+        text-decoration: underline;
+      }
+      
+      /* Audio controls styling */
+      .audio-controls {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+      }
+      
+      #play-button {
+        background: rgba(0, 170, 255, 0.2);
+        border: 2px solid #00aaff;
+        color: #ffffff;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.3s;
+        outline: none;
+        box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+        display: none; /* Initially hidden */
+      }
+      
+      #play-button:hover {
+        background: rgba(0, 170, 255, 0.4);
+        box-shadow: 0 0 20px rgba(0, 170, 255, 0.8);
+      }
+      
+      /* Visualizer container */
+      #visualizer-container {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        z-index: 100;
+        width: 300px;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        overflow: hidden;
+        display: none; /* Initially hidden */
+      }
+      
+      #visualizer {
+        width: 100%;
+        height: 100%;
+      }
+      
+      /* Instructions */
+      .instructions {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        z-index: 100;
+        max-width: 200px;
+      }
+      
+      .instructions h3 {
+        margin-top: 0;
+        color: #00aaff;
+      }
+      
+      .instructions p {
+        margin-bottom: 5px;
+      }
+      
+      /* Lyrics display */
+      #lyrics-container {
+        position: absolute;
+        bottom: 150px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display: none;
+        pointer-events: none;
+      }
+      
+      #current-lyric {
+        font-size: 2rem;
+        font-weight: 300;
+        color: #ffffff;
+        text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+        margin-bottom: 10px;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+      
+      #next-lyric {
+        font-size: 1.2rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.5);
+        text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+      }
+      
+      /* Lyrics editor */
+      #lyrics-editor-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 200;
+        width: 80%;
+        max-width: 600px;
+        display: none;
+      }
+      
+      #lyrics-editor-container h2 {
+        margin-top: 0;
+        color: #00aaff;
+      }
+      
+      #lyrics-editor {
+        width: 100%;
+        height: 300px;
+        background: rgba(0, 0, 0, 0.5);
+        color: #ffffff;
+        border: 1px solid #00aaff;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: monospace;
+        margin-bottom: 10px;
+      }
+      
+      .editor-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      
+      .editor-button {
+        background: rgba(0, 170, 255, 0.2);
+        border: 1px solid #00aaff;
+        color: #ffffff;
+        padding: 5px 15px;
+        font-size: 0.9rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      
+      .editor-button:hover {
+        background: rgba(0, 170, 255, 0.4);
+      }
+		</style>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@v0.163.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@v0.163.0/examples/jsm/"
+        }
+      }
+    </script>
+	</head>
+	<body>
+    <a href="https://collinxander.com/" class="icon">COLLIN XANDER</a>
+    <div id="heading">
+      <h1>XANDER MIX</h1>
+      <div class="border"></div>
+    </div>
+    
+    <div id="progress-container">
+      <div id="progress">LOADING MODEL...</div>
+      <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
+    </div>
+    
+    <div class="audio-controls">
+      <button id="play-button">Play Music</button>
+    </div>
+    
+    <div id="visualizer-container">
+      <canvas id="visualizer"></canvas>
+    </div>
+    
+    <div class="instructions">
+      <h3>Controls</h3>
+      <p>Click "Play Music" to create particle bursts and energy waves</p>
+      <p>Move mouse to steer the spaceship</p>
+      <p>Music visualizations react to different frequency ranges</p>
+    </div>
+    
+    <!-- Lyrics display -->
+    <div id="lyrics-container">
+      <div id="current-lyric"></div>
+      <div id="next-lyric"></div>
+    </div>
+    
+    <!-- Lyrics editor -->
+   
+    <!-- Audio element for the music -->
+    <audio id="audio-player" loop crossOrigin="anonymous">
+      <source src="xandermix.mp3" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <div class="credits">
+      <div>3D Model Created & Developed by Collin Xander</div>
+    </div>
+    
+		<script type="module" src="./main.js"></script>
+	</body>
+</html>
