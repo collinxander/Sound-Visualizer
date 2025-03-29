@@ -1188,16 +1188,13 @@ function setupPostProcessing() {
   composer.addPass(rgbShiftPass)
 }
 
-const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-groundMesh.castShadow = false;
-groundMesh.receiveShadow = true;
-scene.add(groundMesh);
-
 // Load GLTF Model
-const loader = new GLTFLoader().setPath('public/collinship/');
-loader.load('collin.gltf', (gltf) => {
-  console.log('loading model');
-  const mesh = gltf.collin;
+const loader = new GLTFLoader().setPath("public/collinship/")
+loader.load(
+  "collin.gltf",
+  (gltf) => {
+    console.log("loading model")
+    spaceship = gltf.scene // Assign the entire scene to spaceship variable
 
     spaceship.traverse((child) => {
       if (child.isMesh) {
@@ -1779,3 +1776,4 @@ function animate() {
 }
 
 animate()
+
