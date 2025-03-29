@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+// Renderer setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -11,10 +12,12 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
+// Scene and camera
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
 camera.position.set(4, 5, 11);
 
+// Orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
@@ -26,18 +29,6 @@ controls.autoRotate = true;
 controls.autoRotateSpeed = 1.0;
 controls.target = new THREE.Vector3(0, 1, 0);
 controls.update();
-
-// Audio setup
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const audioElement = new Audio('public/audio/xander.mp3');
-audioElement.loop = true;
-const audioSource = audioContext.createMediaElementSource(audioElement);
-const analyser = audioContext.createAnalyser();
-analyser.fftSize = 256;
-audioSource.connect(analyser);
-analyser.connect(audioContext.destination);
-const bufferLength = analyser.frequencyBinCount;
-const dataArray = new Uint8Array(bufferLength);
 
 // Ground
 const groundGeometry = new THREE.PlaneGeometry(20, 20, 32, 32);
@@ -61,6 +52,17 @@ scene.add(spotLight);
 
 const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
 scene.add(ambientLight);
+
+// Audio setup using HTML audio element
+const audioElement = document.getElementById('audio-player');
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const audioSource = audioContext.createMediaElementSource(audioElement);
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 256;
+audioSource.connect(analyser);
+analyser.connect(audioContext.destination);
+const bufferLength = analyser.frequencyBinCount;
+const dataArray = new Uint8Array(bufferLength);
 
 // Visualizer bars
 const bars = [];
@@ -98,36 +100,52 @@ loader.load('collin.gltf', (gltf) => {
         }
     });
     modelMesh.position.set(0, 1.05, -1);
-    modelMesh.scale.set(1, 1, 1);
     scene.add(modelMesh);
-    document.getElementById('progress-container').style.display = 'none';
+
+    // Update UI after loading
+    const progressContainer = document.getElementById('progress-container');
+    progressContainer.style.display = 'none';
+    document.getElementById('heading').style.display = 'block';
+    document.getElementById('play-button').style.display = 'block';
+    document.getElementById('visualizer-container').style.display = 'block';
 }, (xhr) => {
-    console.log(`loading ${xhr.loaded / xhr.total * 100}%`);
+    const progress = (xhr.loaded / xhr.total * 100);
+    const progressBar = document.getElementById('progress-bar');
+    progressBar.style.width = `${progress}%`;
+    console.log(`loading ${progress}%`);
 }, (error) => {
-    console.error(error);
+    console.error('Error loading model:', error);
 });
 
-// Handle window resize
+// Play button functionality
+const playButton = document.getElementById('play-button');
+playButton.addEventListener('click', () => {
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    if (audioElement.paused) {
+        audioElement.play();
+        playButton.textContent = 'Pause Music';
+    } else {
+        audioElement.pause();
+        playButton.textContent = 'Play Music';
+    }
+});
+
+// Window resize handler
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Start audio on user interaction
-document.body.addEventListener('click', () => {
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-    audioElement.play();
-});
-
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
-    
+
     // Audio analysis
     analyser.getByteFrequencyData(dataArray);
-    
+
     // Update visualizer bars
     for (let i = 0; i < barCount; i++) {
         const value = dataArray[i] / 255;
