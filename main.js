@@ -1189,13 +1189,11 @@ function setupPostProcessing() {
 }
 
 // Load GLTF Model
-const loader = new GLTFLoader().setPath("public/spaceship/scene.gltf")
-loader.load(
-  "scene.gltf",
-  (gltf) => {
-    console.log("Model loaded successfully")
-    spaceship = gltf.scene
-
+const loader = new GLTFLoader().setPath('public/collinship/');
+loader.load('collin.gltf', (gltf) => {
+  console.log('loading model');
+  const mesh = gltf.scene;
+  
     spaceship.traverse((child) => {
       if (child.isMesh) {
         if (child.material) {
