@@ -1188,6 +1188,11 @@ function setupPostProcessing() {
   composer.addPass(rgbShiftPass)
 }
 
+const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+groundMesh.castShadow = false;
+groundMesh.receiveShadow = true;
+scene.add(groundMesh);
+
 // Load GLTF Model
 const loader = new GLTFLoader().setPath('public/collinship/');
 loader.load('collin.gltf', (gltf) => {
