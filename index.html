@@ -1,538 +1,577 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="profilepic.jpg" type="image/x-icon">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#000000">
-    <title>SOUND VISUALIZER - COLLIN XANDER</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Arial', sans-serif;
-            background-color: #000;
-            color: #fff;
-        }
+  <link rel="icon" href="profilepic.jpg" type="image/x-icon">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <title>SOUND VISUALIZER - COLLIN XANDER</title>
+  <style>
+      body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          font-family: 'Arial', sans-serif;
+          background-color: #000;
+          color: #fff;
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+      }
 
-        .icon {
-            text-align: center;
-            padding: 12px;
-            text-decoration: none;
-            font-style: italic;
-            color: red;
-            font-size: 27px;
-            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-            animation: glow 1s ease-in-out infinite alternate;
-            z-index: 10;
-            transition: color 0.6s;
-            margin-bottom: 20px;
-        }
+      .icon {
+          text-align: center;
+          padding: 12px;
+          text-decoration: none;
+          font-style: italic;
+          color: red;
+          font-size: 27px;
+          font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+          animation: glow 1s ease-in-out infinite alternate;
+          z-index: 10;
+          transition: color 0.6s;
+          margin-bottom: 20px;
+          display: block;
+          position: absolute;
+          top: 10px;
+          left: 10px;
+      }
 
-        .icon:hover {
-            color: lime;
-        }
+      .icon:hover {
+          color: lime;
+      }
 
-        @keyframes glow {
-            0% { text-shadow: 0 0 5px red; }
-            100% { text-shadow: 0 0 20px red; }
-        }
+      @keyframes glow {
+          0% { text-shadow: 0 0 5px red; }
+          100% { text-shadow: 0 0 20px red; }
+      }
 
-        #heading {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 100;
-            display: none;
-        }
+      #heading {
+          position: absolute;
+          top: 20px;
+          left: 0;
+          width: 100%;
+          text-align: center;
+          z-index: 100;
+          display: none;
+      }
 
-        h1 {
-            font-size: 3rem;
-            letter-spacing: 0.8rem;
-            margin: 0;
-            text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-            font-weight: 300;
-        }
+      h1 {
+          font-size: 3rem;
+          letter-spacing: 0.8rem;
+          margin: 0;
+          text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+          font-weight: 300;
+      }
 
-        .border {
-            height: 2px;
-            width: 300px;
-            background: linear-gradient(90deg, transparent, #00aaff, transparent);
-            margin: 10px auto;
-            box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-        }
+      .border {
+          height: 2px;
+          width: 300px;
+          background: linear-gradient(90deg, transparent, #00aaff, transparent);
+          margin: 10px auto;
+          box-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+      }
 
-        #progress-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 100;
-            width: 300px;
-        }
+      #progress-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+          z-index: 100;
+          width: 300px;
+      }
 
-        #progress {
-            font-size: 1rem;
-            letter-spacing: 0.2rem;
-            margin-bottom: 10px;
-            color: #00aaff;
-        }
+      #progress {
+          font-size: 1rem;
+          letter-spacing: 0.2rem;
+          margin-bottom: 10px;
+          color: #00aaff;
+      }
 
-        #progress-bar-container {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            overflow: hidden;
-        }
+      #progress-bar-container {
+          width: 100%;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2px;
+          overflow: hidden;
+      }
 
-        #progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #0088ff, #00aaff);
-            transition: width 0.3s;
-        }
+      #progress-bar {
+          height: 100%;
+          width: 0%;
+          background: linear-gradient(90deg, #0088ff, #00aaff);
+          transition: width 0.3s;
+      }
 
-        .credits {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            color: #00aaff;
-            font-size: 0.8rem;
-            opacity: 0.5;
-            text-align: right;
-            z-index: 100;
-        }
+      .credits {
+          position: absolute;
+          bottom: 20px;
+          right: 20px;
+          color: #00aaff;
+          font-size: 0.8rem;
+          opacity: 0.5;
+          text-align: right;
+          z-index: 100;
+      }
 
-        .credits a {
-            color: #00aaff;
-            text-decoration: none;
-        }
+      .credits a {
+          color: #00aaff;
+          text-decoration: none;
+      }
 
-        .credits a:hover {
-            text-decoration: underline;
-        }
+      .credits a:hover {
+          text-decoration: underline;
+      }
 
-        .audio-controls {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-        }
+      .audio-controls {
+          position: absolute;
+          bottom: 80px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 100;
+      }
 
-        #play-button {
-            background: rgba(0, 170, 255, 0.2);
-            border: 2px solid #00aaff;
-            color: #ffffff;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s;
-            outline: none;
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
-            display: none;
-        }
+      #play-button {
+          background: rgba(0, 170, 255, 0.2);
+          border: 2px solid #00aaff;
+          color: #ffffff;
+          padding: 10px 20px;
+          font-size: 1rem;
+          border-radius: 30px;
+          cursor: pointer;
+          transition: all 0.3s;
+          outline: none;
+          box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+          display: none;
+      }
 
-        #play-button:hover {
-            background: rgba(0, 170, 255, 0.4);
-            box-shadow: 0 0 20px rgba(0, 170, 255, 0.8);
-        }
+      #play-button:hover {
+          background: rgba(0, 170, 255, 0.4);
+          box-shadow: 0 0 20px rgba(0, 170, 255, 0.8);
+      }
 
-        #visualizer-container {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 100;
-            width: 300px;
-            height: 60px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 5px;
-            overflow: hidden;
-            display: none;
-        }
+      #visualizer-container {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 100;
+          width: 300px;
+          height: 60px;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 5px;
+          overflow: hidden;
+          display: none;
+      }
 
-        #visualizer {
-            width: 100%;
-            height: 100%;
-        }
+      #visualizer {
+          width: 100%;
+          height: 100%;
+      }
 
-        .instructions {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            z-index: 100;
-            max-width: 200px;
-        }
+      .instructions {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background: rgba(0, 0, 0, 0.5);
+          padding: 10px;
+          border-radius: 5px;
+          font-size: 0.8rem;
+          z-index: 100;
+          max-width: 200px;
+      }
 
-        .instructions h3 {
-            margin-top: 0;
-            color: #00aaff;
-        }
+      .instructions h3 {
+          margin-top: 0;
+          color: #00aaff;
+      }
 
-        .instructions p {
-            margin-bottom: 5px;
-        }
+      .instructions p {
+          margin-bottom: 5px;
+      }
 
+      #lyrics-container {
+          position: absolute;
+          bottom: 150px;
+          left: 50%;
+          transform: translateX(-50%);
+          text-align: center;
+          z-index: 100;
+          width: 80%;
+      }
 
-        .editor-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
+      #current-lyric {
+          font-size: 2rem;
+          color: #fff;
+          text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
+          margin-bottom: 10px;
+      }
 
-        .editor-button {
-            background: rgba(0, 170, 255, 0.2);
-            border: 1px solid #00aaff;
-            color: #ffffff;
-            padding: 5px 15px;
-            font-size: 0.9rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+      #next-lyric {
+          font-size: 1.2rem;
+          color: rgba(255, 255, 255, 0.7);
+      }
 
-        .editor-button:hover {
-            background: rgba(0, 170, 255, 0.4);
-        }
+      /* Fixed Media Queries */
+      
+      /* Large Desktop (1440px and up) */
+      @media screen and (min-width: 1440px) {
+          h1 {
+              font-size: 3.5rem;
+              letter-spacing: 1rem;
+          }
+          .border {
+              width: 400px;
+          }
+          #visualizer-container {
+              width: 400px;
+              height: 80px;
+          }
+          .instructions {
+              font-size: 1rem;
+              max-width: 300px;
+          }
+          #current-lyric {
+              font-size: 2.5rem;
+          }
+          #next-lyric {
+              font-size: 1.5rem;
+          }
+          .icon {
+              font-size: 32px;
+              padding: 15px;
+          }
+      }
 
-        /* Enhanced Media Queries */
+      /* Desktop (1024px - 1439px) */
+      @media screen and (min-width: 1025px) and (max-width: 1439px) {
+          h1 {
+              font-size: 3.2rem;
+              letter-spacing: 0.9rem;
+          }
+          .border {
+              width: 350px;
+          }
+          #visualizer-container {
+              width: 350px;
+          }
+          .instructions {
+              max-width: 250px;
+          }
+          .icon {
+              font-size: 30px;
+              padding: 14px;
+          }
+      }
 
-        /* Large Desktop (1440px and up) */
-        @media screen and (min-width: 1440px) {
-            h1 {
-                font-size: 3.5rem;
-                letter-spacing: 1rem;
-            }
-            .border {
-                width: 400px;
-            }
-            #visualizer-container {
-                width: 400px;
-                height: 80px;
-            }
-            .instructions {
-                font-size: 1rem;
-                max-width: 300px;
-            }
-            #current-lyric {
-                font-size: 2.5rem;
-            }
-            #next-lyric {
-                font-size: 1.5rem;
-            }
-        }
+      /* Tablet (768px - 1024px) */
+      @media screen and (min-width: 769px) and (max-width: 1024px) {
+          .icon {
+              font-size: 28px;
+              padding: 12px;
+          }
+          h1 {
+              font-size: 2.8rem;
+              letter-spacing: 0.7rem;
+          }
+          .border {
+              width: 300px;
+          }
+          #progress-container {
+              width: 320px;
+          }
+          #play-button {
+              padding: 12px 24px;
+              font-size: 1.2rem;
+          }
+          .instructions {
+              font-size: 0.9rem;
+              max-width: 220px;
+          }
+          #visualizer-container {
+              width: 300px;
+              height: 60px;
+          }
+      }
 
-        /* Desktop (1024px - 1439px) */
-        @media screen and (max-width: 1439px) and (min-width: 1025px) {
-            h1 {
-                font-size: 3.2rem;
-                letter-spacing: 0.9rem;
-            }
-            .border {
-                width: 350px;
-            }
-            #visualizer-container {
-                width: 350px;
-            }
-            .instructions {
-                max-width: 250px;
-            }
-        }
+      /* Large Mobile (481px - 768px) */
+      @media screen and (min-width: 481px) and (max-width: 768px) {
+          .icon {
+              font-size: 26px;
+              padding: 10px;
+          }
+          h1 {
+              font-size: 2.5rem;
+              letter-spacing: 0.6rem;
+          }
+          .border {
+              width: 280px;
+          }
+          #progress {
+              font-size: 1.1rem;
+          }
+          #progress-container {
+              width: 300px;
+          }
+          #play-button {
+              padding: 12px 24px;
+              font-size: 1.1rem;
+              min-width: 180px;
+          }
+          .instructions {
+              font-size: 0.8rem;
+              padding: 10px;
+              max-width: 200px;
+          }
+          #visualizer-container {
+              width: 280px;
+              height: 60px;
+          }
+          .credits {
+              font-size: 0.8rem;
+          }
+          #current-lyric {
+              font-size: 1.8rem;
+          }
+          #next-lyric {
+              font-size: 1rem;
+          }
+      }
 
-        /* Tablet (768px - 1024px) */
-        @media screen and (max-width: 1024px) and (min-width: 769px) {
-            .icon {
-                font-size: 34px;
-                padding: 14px;
-            }
-            h1 {
-                font-size: 2.8rem;
-                letter-spacing: 0.7rem;
-            }
-            .border {
-                width: 300px;
-            }
-            #progress-container {
-                width: 320px;
-            }
-            #play-button {
-                padding: 12px 24px;
-                font-size: 1.2rem;
-            }
-            .instructions {
-                font-size: 0.95rem;
-                max-width: 220px;
-                bottom: 160px;
-            }
-            #visualizer-container {
-                width: 300px;
-                height: 60px;
-            }
-        }
+      /* Medium Mobile (361px - 480px) */
+      @media screen and (min-width: 361px) and (max-width: 480px) {
+          .icon {
+              font-size: 22px;
+              padding: 8px;
+              top: 10px;
+              left: 10px;
+          }
+          h1 {
+              font-size: 2rem;
+              letter-spacing: 0.4rem;
+          }
+          .border {
+              width: 220px;
+          }
+          #progress {
+              font-size: 1rem;
+          }
+          #progress-container {
+              width: 280px;
+          }
+          #play-button {
+              padding: 10px 20px;
+              font-size: 1rem;
+              min-width: 160px;
+          }
+          .instructions {
+              font-size: 0.75rem;
+              padding: 8px;
+              max-width: 160px;
+              top: 10px;
+              right: 10px;
+          }
+          .instructions h3 {
+              font-size: 1rem;
+              margin-bottom: 8px;
+          }
+          #visualizer-container {
+              width: 240px;
+              height: 50px;
+          }
+          .credits {
+              font-size: 0.7rem;
+              bottom: 10px;
+              right: 10px;
+          }
+          #lyrics-container {
+              bottom: 120px;
+          }
+          #current-lyric {
+              font-size: 1.5rem;
+          }
+          #next-lyric {
+              font-size: 0.9rem;
+          }
+      }
 
-        /* Large Mobile (481px - 768px) */
-        @media screen and (max-width: 768px) {
-            .icon {
-                font-size: 36px;
-                padding: 15px;
-                display: block;
-                text-align: center;
-            }
-            h1 {
-                font-size: 2.8rem;
-                letter-spacing: 0.6rem;
-            }
-            .border {
-                width: 280px;
-            }
-            #progress {
-                font-size: 1.3rem;
-            }
-            #progress-container {
-                width: 300px;
-            }
-            #play-button {
-                padding: 16px 32px;
-                font-size: 1.3rem;
-                min-width: 200px;
-            }
-            .instructions {
-                top: auto;
-                bottom: 150px;
-                right: 15px;
-                font-size: 1.1rem;
-                padding: 15px;
-                max-width: 220px;
-                background: rgba(0, 0, 0, 0.8);
-                border: 1px solid rgba(0, 170, 255, 0.3);
-            }
-            .instructions h3 {
-                font-size: 1.4rem;
-                margin-bottom: 12px;
-            }
-            #visualizer-container {
-                width: 280px;
-                height: 60px;
-                left: 50%;
-                transform: translateX(-50%);
-                bottom: 30px;
-            }
-            .credits {
-                font-size: 1rem;
-                bottom: 15px;
-                right: 15px;
-            }
-        }
+      /* Small Mobile (up to 360px) */
+      @media screen and (max-width: 360px) {
+          .icon {
+              font-size: 20px;
+              padding: 6px;
+              top: 5px;
+              left: 5px;
+          }
+          h1 {
+              font-size: 1.8rem;
+              letter-spacing: 0.3rem;
+          }
+          .border {
+              width: 180px;
+          }
+          #progress-container {
+              width: 250px;
+          }
+          #progress {
+              font-size: 0.9rem;
+          }
+          #play-button {
+              padding: 8px 16px;
+              font-size: 0.9rem;
+              min-width: 140px;
+          }
+          .instructions {
+              font-size: 0.7rem;
+              padding: 6px;
+              max-width: 140px;
+              top: 5px;
+              right: 5px;
+          }
+          .instructions h3 {
+              font-size: 0.9rem;
+              margin-bottom: 6px;
+          }
+          #visualizer-container {
+              width: 200px;
+              height: 40px;
+              bottom: 15px;
+          }
+          .credits {
+              font-size: 0.6rem;
+              bottom: 5px;
+              right: 5px;
+          }
+          #lyrics-container {
+              bottom: 100px;
+          }
+          #current-lyric {
+              font-size: 1.3rem;
+          }
+          #next-lyric {
+              font-size: 0.8rem;
+          }
+          .audio-controls {
+              bottom: 60px;
+          }
+      }
 
-        /* Medium Mobile (361px - 480px) */
-        @media screen and (max-width: 480px) {
-            .icon {
-        font-size: 20px;
-        padding: 8px;
-        position: absolute;
-        top: 10px;
-        left: 10px;
-    }
-            h1 {
-                font-size: 2.2rem;
-                letter-spacing: 0.4rem;
-            }
-            .border {
-                width: 220px;
-            }
-            #progress {
-                font-size: 1.2rem;
-            }
-            #progress-container {
-                width: 280px;
-            }
-            #play-button {
-                padding: 15px 30px;
-                font-size: 1.2rem;
-                min-width: 180px;
-            }
-            .instructions {
-        font-size: 0.8rem;
-        padding: 8px;
-        max-width: 160px;
-        top: 10px;
-        right: 10px;
-    }
-            #visualizer-container {
-                width: 240px;
-                height: 50px;
-            }
-            .credits {
-                font-size: 0.9rem;
-            }
-        }
+      /* Landscape Orientation */
+      @media screen and (max-height: 500px) and (orientation: landscape) {
+          .icon {
+              font-size: 20px;
+              padding: 6px;
+              top: 5px;
+              left: 5px;
+          }
+          h1 {
+              font-size: 1.8rem;
+              letter-spacing: 0.4rem;
+          }
+          .border {
+              width: 200px;
+          }
+          .instructions {
+              max-width: 180px;
+              font-size: 0.7rem;
+              bottom: 70px;
+              right: 10px;
+              top: auto;
+          }
+          .instructions h3 {
+              font-size: 0.9rem;
+              margin-bottom: 5px;
+          }
+          .audio-controls {
+              bottom: 40px;
+          }
+          #play-button {
+              padding: 8px 16px;
+              font-size: 0.9rem;
+          }
+          #visualizer-container {
+              bottom: 10px;
+              height: 30px;
+              width: 250px;
+          }
+          .credits {
+              bottom: 5px;
+              font-size: 0.7rem;
+          }
+          #lyrics-container {
+              bottom: 80px;
+          }
+          #current-lyric {
+              font-size: 1.5rem;
+          }
+          #next-lyric {
+              font-size: 0.9rem;
+          }
+          #progress-container {
+              width: 250px;
+          }
+      }
 
-        /* Small Mobile (up to 360px) */
-        @media screen and (max-width: 360px) {
-            .icon {
-                font-size: 28px;
-                padding: 10px;
-            }
-            h1 {
-                font-size: 1.8rem;
-                letter-spacing: 0.3rem;
-            }
-            .border {
-                width: 180px;
-            }
-            #progress-container {
-                width: 250px;
-            }
-            #play-button {
-                padding: 14px 28px;
-                font-size: 1.1rem;
-                min-width: 160px;
-            }
-            .instructions {
-                bottom: 130px;
-                right: 5px;
-                font-size: 0.9rem;
-                padding: 10px;
-                max-width: 150px;
-            }
-            #visualizer-container {
-                width: 200px;
-                height: 40px;
-            }
-        }
-
-        /* Landscape Orientation */
-        @media screen and (max-height: 500px) and (orientation: landscape) {
-            .icon {
-                font-size: 24px;
-                padding: 8px;
-            }
-            h1 {
-                font-size: 2rem;
-            }
-            .instructions {
-                max-width: 200px;
-                font-size: 0.9rem;
-                bottom: 80px;
-                right: 10px;
-            }
-            .audio-controls {
-                bottom: 50px;
-            }
-            #visualizer-container {
-                bottom: 15px;
-                height: 40px;
-                width: 250px;
-            }
-            .credits {
-                bottom: 5px;
-                font-size: 0.8rem;
-            }
-            #lyrics-container {
-                bottom: 100px;
-            }
-            #current-lyric {
-                font-size: 1.8rem;
-            }
-            #next-lyric {
-                font-size: 1rem;
-            }
-        }
-
-        /* High-density displays (Retina) */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            .border {
-                height: 3px;
-            }
-            #progress-bar {
-                height: 5px;
-            }
-            #play-button {
-                border-width: 3px;
-            }
-        }
-
-        /* Very small devices (below 320px) */
-        @media screen and (max-width: 320px) {
-            .icon {
-                font-size: 24px;
-            }
-            h1 {
-                font-size: 1.6rem;
-                letter-spacing: 0.2rem;
-            }
-            .border {
-                width: 160px;
-            }
-            #progress-container {
-                width: 220px;
-            }
-            #play-button {
-                padding: 12px 24px;
-                font-size: 1rem;
-                min-width: 140px;
-            }
-            #visualizer-container {
-                width: 180px;
-                height: 35px;
-            }
-        }
-    </style>
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@v0.163.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@v0.163.0/examples/jsm/"
-            }
-        }
-    </script>
+      /* High-density displays (Retina) */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .border {
+              height: 3px;
+          }
+          #progress-bar-container {
+              height: 5px;
+          }
+          #play-button {
+              border-width: 3px;
+          }
+      }
+  </style>
+  <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+      {
+          "imports": {
+              "three": "https://unpkg.com/three@v0.163.0/build/three.module.js",
+              "three/addons/": "https://unpkg.com/three@v0.163.0/examples/jsm/"
+          }
+      }
+  </script>
 </head>
 <body>
-    <a href="https://collinxander.com/" class="icon">COLLIN XANDER</a>
-    <div id="heading">
-        <h1>XANDER MIX</h1>
-        <div class="border"></div>
-    </div>
-    <div id="progress-container">
-        <div id="progress">LOADING MODEL...</div>
-        <div id="progress-bar-container">
-            <div id="progress-bar"></div>
-        </div>
-    </div>
-    <div class="audio-controls">
-        <button id="play-button">Play Music</button>
-    </div>
-    <div id="visualizer-container">
-        <canvas id="visualizer"></canvas>
-    </div>
-    <div class="instructions">
-        <h3>Controls</h3>
-        <p>Click "Play Music" to create particle bursts and energy waves</p>
-        <p>Move mouse to steer the spaceship</p>
-        <p>Music visualizations react to different frequency ranges</p>
-    </div>
-    <div id="lyrics-container">
-        <div id="current-lyric"></div>
-        <div id="next-lyric"></div>
-    </div>
-    <audio id="audio-player" loop crossOrigin="anonymous">
-        <source src="xandermix.mp3" type="audio/mp3">
-        Your browser does not support the audio element.
-    </audio>
-    <div class="credits">
-        <div>3D Website Created & Developed by Collin Xander</div>
-    </div>
-    <script type="module" src="./main.js"></script>
+  <a href="https://collinxander.com/" class="icon">COLLIN XANDER</a>
+  <div id="heading">
+      <h1>XANDER MIX</h1>
+      <div class="border"></div>
+  </div>
+  <div id="progress-container">
+      <div id="progress">LOADING MODEL...</div>
+      <div id="progress-bar-container">
+          <div id="progress-bar"></div>
+      </div>
+  </div>
+  <div class="audio-controls">
+      <button id="play-button">Play Music</button>
+  </div>
+  <div id="visualizer-container">
+      <canvas id="visualizer"></canvas>
+  </div>
+  <div class="instructions">
+      <h3>Controls</h3>
+      <p>Click "Play Music" to create particle bursts and energy waves</p>
+      <p>Move mouse to steer the spaceship</p>
+      <p>Music visualizations react to different frequency ranges</p>
+  </div>
+  <div id="lyrics-container">
+      <div id="current-lyric"></div>
+      <div id="next-lyric"></div>
+  </div>
+  <audio id="audio-player" loop crossOrigin="anonymous">
+      <source src="xandermix.mp3" type="audio/mp3">
+      Your browser does not support the audio element.
+  </audio>
+  <div class="credits">
+      <div>3D Website Created & Developed by Collin Xander</div>
+  </div>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
+
