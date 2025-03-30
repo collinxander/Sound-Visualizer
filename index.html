@@ -14,9 +14,6 @@
             font-family: 'Arial', sans-serif;
             background-color: #000;
             color: #fff;
-            position: relative;
-            width: 100vw;
-            height: 100vh;
         }
 
         .icon {
@@ -31,10 +28,6 @@
             z-index: 10;
             transition: color 0.6s;
             margin-bottom: 20px;
-            display: block;
-            position: absolute;
-            top: 10px;
-            left: 10px;
         }
 
         .icon:hover {
@@ -154,8 +147,7 @@
         #visualizer-container {
             position: absolute;
             bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 20px;
             z-index: 100;
             width: 300px;
             height: 60px;
@@ -191,30 +183,30 @@
             margin-bottom: 5px;
         }
 
-        #lyrics-container {
-            position: absolute;
-            bottom: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            z-index: 100;
-            width: 80%;
+
+        .editor-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
 
-        #current-lyric {
-            font-size: 2rem;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(0, 170, 255, 0.8);
-            margin-bottom: 10px;
+        .editor-button {
+            background: rgba(0, 170, 255, 0.2);
+            border: 1px solid #00aaff;
+            color: #ffffff;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        #next-lyric {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.7);
+        .editor-button:hover {
+            background: rgba(0, 170, 255, 0.4);
         }
 
-        /* Fixed Media Queries */
-        
+        /* Enhanced Media Queries */
+
         /* Large Desktop (1440px and up) */
         @media screen and (min-width: 1440px) {
             h1 {
@@ -238,14 +230,10 @@
             #next-lyric {
                 font-size: 1.5rem;
             }
-            .icon {
-                font-size: 32px;
-                padding: 15px;
-            }
         }
 
         /* Desktop (1024px - 1439px) */
-        @media screen and (min-width: 1025px) and (max-width: 1439px) {
+        @media screen and (max-width: 1439px) and (min-width: 1025px) {
             h1 {
                 font-size: 3.2rem;
                 letter-spacing: 0.9rem;
@@ -259,17 +247,13 @@
             .instructions {
                 max-width: 250px;
             }
-            .icon {
-                font-size: 30px;
-                padding: 14px;
-            }
         }
 
         /* Tablet (768px - 1024px) */
-        @media screen and (min-width: 769px) and (max-width: 1024px) {
+        @media screen and (max-width: 1024px) and (min-width: 769px) {
             .icon {
-                font-size: 28px;
-                padding: 12px;
+                font-size: 34px;
+                padding: 14px;
             }
             h1 {
                 font-size: 2.8rem;
@@ -286,8 +270,9 @@
                 font-size: 1.2rem;
             }
             .instructions {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 max-width: 220px;
+                bottom: 160px;
             }
             #visualizer-container {
                 width: 300px;
@@ -296,102 +281,98 @@
         }
 
         /* Large Mobile (481px - 768px) */
-        @media screen and (min-width: 481px) and (max-width: 768px) {
+        @media screen and (max-width: 768px) {
             .icon {
-                font-size: 26px;
-                padding: 10px;
+                font-size: 36px;
+                padding: 15px;
+                display: block;
+                text-align: center;
             }
             h1 {
-                font-size: 2.5rem;
+                font-size: 2.8rem;
                 letter-spacing: 0.6rem;
             }
             .border {
                 width: 280px;
             }
             #progress {
-                font-size: 1.1rem;
+                font-size: 1.3rem;
             }
             #progress-container {
                 width: 300px;
             }
             #play-button {
-                padding: 12px 24px;
-                font-size: 1.1rem;
-                min-width: 180px;
+                padding: 16px 32px;
+                font-size: 1.3rem;
+                min-width: 200px;
             }
             .instructions {
-                font-size: 0.8rem;
-                padding: 10px;
-                max-width: 200px;
+                top: auto;
+                bottom: 150px;
+                right: 15px;
+                font-size: 1.1rem;
+                padding: 15px;
+                max-width: 220px;
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(0, 170, 255, 0.3);
+            }
+            .instructions h3 {
+                font-size: 1.4rem;
+                margin-bottom: 12px;
             }
             #visualizer-container {
                 width: 280px;
                 height: 60px;
+                left: 50%;
+                transform: translateX(-50%);
+                bottom: 30px;
             }
             .credits {
-                font-size: 0.8rem;
-            }
-            #current-lyric {
-                font-size: 1.8rem;
-            }
-            #next-lyric {
                 font-size: 1rem;
+                bottom: 15px;
+                right: 15px;
             }
         }
 
         /* Medium Mobile (361px - 480px) */
-        @media screen and (min-width: 361px) and (max-width: 480px) {
+        @media screen and (max-width: 480px) {
             .icon {
-                font-size: 22px;
-                padding: 8px;
-                top: 10px;
-                left: 10px;
-            }
+        font-size: 20px;
+        padding: 8px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
                 letter-spacing: 0.4rem;
             }
             .border {
                 width: 220px;
             }
             #progress {
-                font-size: 1rem;
+                font-size: 1.2rem;
             }
             #progress-container {
                 width: 280px;
             }
             #play-button {
-                padding: 10px 20px;
-                font-size: 1rem;
-                min-width: 160px;
+                padding: 15px 30px;
+                font-size: 1.2rem;
+                min-width: 180px;
             }
             .instructions {
-                font-size: 0.75rem;
-                padding: 8px;
-                max-width: 160px;
-                top: 10px;
-                right: 10px;
-            }
-            .instructions h3 {
-                font-size: 1rem;
-                margin-bottom: 8px;
-            }
+        font-size: 0.8rem;
+        padding: 8px;
+        max-width: 160px;
+        top: 10px;
+        right: 10px;
+    }
             #visualizer-container {
                 width: 240px;
                 height: 50px;
             }
             .credits {
-                font-size: 0.7rem;
-                bottom: 10px;
-                right: 10px;
-            }
-            #lyrics-container {
-                bottom: 120px;
-            }
-            #current-lyric {
-                font-size: 1.5rem;
-            }
-            #next-lyric {
                 font-size: 0.9rem;
             }
         }
@@ -399,10 +380,8 @@
         /* Small Mobile (up to 360px) */
         @media screen and (max-width: 360px) {
             .icon {
-                font-size: 20px;
-                padding: 6px;
-                top: 5px;
-                left: 5px;
+                font-size: 28px;
+                padding: 10px;
             }
             h1 {
                 font-size: 1.8rem;
@@ -414,102 +393,59 @@
             #progress-container {
                 width: 250px;
             }
-            #progress {
-                font-size: 0.9rem;
-            }
             #play-button {
-                padding: 8px 16px;
-                font-size: 0.9rem;
-                min-width: 140px;
+                padding: 14px 28px;
+                font-size: 1.1rem;
+                min-width: 160px;
             }
             .instructions {
-                font-size: 0.7rem;
-                padding: 6px;
-                max-width: 140px;
-                top: 5px;
+                bottom: 130px;
                 right: 5px;
-            }
-            .instructions h3 {
                 font-size: 0.9rem;
-                margin-bottom: 6px;
+                padding: 10px;
+                max-width: 150px;
             }
             #visualizer-container {
                 width: 200px;
                 height: 40px;
-                bottom: 15px;
-            }
-            .credits {
-                font-size: 0.6rem;
-                bottom: 5px;
-                right: 5px;
-            }
-            #lyrics-container {
-                bottom: 100px;
-            }
-            #current-lyric {
-                font-size: 1.3rem;
-            }
-            #next-lyric {
-                font-size: 0.8rem;
-            }
-            .audio-controls {
-                bottom: 60px;
             }
         }
 
         /* Landscape Orientation */
         @media screen and (max-height: 500px) and (orientation: landscape) {
             .icon {
-                font-size: 20px;
-                padding: 6px;
-                top: 5px;
-                left: 5px;
+                font-size: 24px;
+                padding: 8px;
             }
             h1 {
-                font-size: 1.8rem;
-                letter-spacing: 0.4rem;
-            }
-            .border {
-                width: 200px;
+                font-size: 2rem;
             }
             .instructions {
-                max-width: 180px;
-                font-size: 0.7rem;
-                bottom: 70px;
-                right: 10px;
-                top: auto;
-            }
-            .instructions h3 {
+                max-width: 200px;
                 font-size: 0.9rem;
-                margin-bottom: 5px;
+                bottom: 80px;
+                right: 10px;
             }
             .audio-controls {
-                bottom: 40px;
-            }
-            #play-button {
-                padding: 8px 16px;
-                font-size: 0.9rem;
+                bottom: 50px;
             }
             #visualizer-container {
-                bottom: 10px;
-                height: 30px;
+                bottom: 15px;
+                height: 40px;
                 width: 250px;
             }
             .credits {
                 bottom: 5px;
-                font-size: 0.7rem;
+                font-size: 0.8rem;
             }
             #lyrics-container {
-                bottom: 80px;
+                bottom: 100px;
             }
             #current-lyric {
-                font-size: 1.5rem;
+                font-size: 1.8rem;
             }
             #next-lyric {
-                font-size: 0.9rem;
-            }
-            #progress-container {
-                width: 250px;
+                font-size: 1rem;
             }
         }
 
@@ -518,21 +454,41 @@
             .border {
                 height: 3px;
             }
-            #progress-bar-container {
+            #progress-bar {
                 height: 5px;
             }
             #play-button {
                 border-width: 3px;
             }
         }
+
+        /* Very small devices (below 320px) */
+        @media screen and (max-width: 320px) {
+            .icon {
+                font-size: 24px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                letter-spacing: 0.2rem;
+            }
+            .border {
+                width: 160px;
+            }
+            #progress-container {
+                width: 220px;
+            }
+            #play-button {
+                padding: 12px 24px;
+                font-size: 1rem;
+                min-width: 140px;
+            }
+            #visualizer-container {
+                width: 180px;
+                height: 35px;
+            }
+        }
     </style>
-    <!-- Preload critical resources -->
-    <link rel="preload" href="https://unpkg.com/three@v0.163.0/build/three.module.js" as="script">
-    <link rel="preload" href="public/collinship/collin.gltf" as="fetch" crossorigin>
-    <link rel="preload" href="xandermix.mp3" as="audio">
-    
-    <!-- Defer non-critical scripts -->
-    <script defer src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
@@ -570,14 +526,13 @@
         <div id="current-lyric"></div>
         <div id="next-lyric"></div>
     </div>
-    <audio id="audio-player" loop crossOrigin="anonymous" preload="metadata">
+    <audio id="audio-player" loop crossOrigin="anonymous">
         <source src="xandermix.mp3" type="audio/mp3">
         Your browser does not support the audio element.
     </audio>
     <div class="credits">
         <div>3D Website Created & Developed by Collin Xander</div>
     </div>
-    <script type="module" src="./main-optimized.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 </html>
-
