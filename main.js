@@ -37,17 +37,18 @@ let beatDetected = false
 
 // Renderer setup with optimized settings
 const renderer = new THREE.WebGLRenderer({
-  antialias: true,
+  antialias: false, // Disable antialiasing for better performance
   powerPreference: "high-performance",
+  precision: "mediump", // Use medium precision for better performance
 })
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setClearColor(0x000000)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)) // Limit pixel ratio to 1 for better performance
 renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap // Use PCF instead of PCFSoft for better performance
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.8 // Increased from 1.2 to 1.8
+renderer.toneMappingExposure = 1.8
 document.body.appendChild(renderer.domElement)
 
 // Scene setup
@@ -71,6 +72,17 @@ controls.autoRotate = false
 controls.target = new THREE.Vector3(0, 1, 0)
 controls.update()
 
+// Texture loader with cache
+const textureLoader = new THREE.TextureLoader()
+const textureCache = {}
+
+function loadTextureWithCache(url) {
+  if (!textureCache[url]) {
+    textureCache[url] = textureLoader.load(url)
+  }
+  return textureCache[url]
+}
+
 // Audio setup
 function setupAudio() {
   const audioElement = document.getElementById("audio-player")
@@ -84,7 +96,7 @@ function setupAudio() {
 
   // Create analyser
   audioAnalyser = audioContext.createAnalyser()
-  audioAnalyser.fftSize = 2048
+  audioAnalyser.fftSize = 1024 // Reduced from 2048 for better performance
   audioAnalyser.smoothingTimeConstant = 0.85
 
   // Connect audio element to analyser
@@ -239,23 +251,26 @@ function drawVisualizer() {
   visualizerContext.fillStyle = "rgba(0, 0, 0, 0.2)"
   visualizerContext.fillRect(0, 0, width, height)
 
-  // Draw frequency bars
-  const barWidth = width / audioData.length
+  // Draw frequency bars - optimize by drawing fewer bars
+  const barCount = Math.min(64, audioData.length)
+  const barWidth = width / barCount
+  const step = Math.floor(audioData.length / barCount)
 
-  for (let i = 0; i < audioData.length; i++) {
-    const barHeight = audioData[i] * height
+  for (let i = 0; i < barCount; i++) {
+    const dataIndex = i * step
+    const barHeight = audioData[dataIndex] * height
 
     // Determine color based on frequency range
     let hue
-    if (i < audioData.length / 3) {
+    if (i < barCount / 3) {
       // Bass - red to orange
-      hue = 0 + (i / (audioData.length / 3)) * 30
-    } else if (i < (audioData.length * 2) / 3) {
+      hue = 0 + (i / (barCount / 3)) * 30
+    } else if (i < (barCount * 2) / 3) {
       // Mid - yellow to green
-      hue = 30 + ((i - audioData.length / 3) / (audioData.length / 3)) * 90
+      hue = 30 + ((i - barCount / 3) / (barCount / 3)) * 90
     } else {
       // Treble - cyan to blue
-      hue = 180 + ((i - (audioData.length * 2) / 3) / (audioData.length / 3)) * 60
+      hue = 180 + ((i - (barCount * 2) / 3) / (barCount / 3)) * 60
     }
 
     visualizerContext.fillStyle = `hsl(${hue}, 80%, 50%)`
@@ -273,13 +288,13 @@ function getAverageFrequency(dataArray) {
   return sum / dataArray.length
 }
 
-// Create Skybox
+// Create Skybox - OPTIMIZED
 function createSkybox() {
   const geometry = new THREE.BoxGeometry(500, 500, 500)
   const materialArray = []
 
-  const textureLoader = new THREE.TextureLoader()
-  const texture = textureLoader.load("/placeholder.svg?height=1024&width=1024")
+  // Use a single texture for all sides
+  const texture = loadTextureWithCache("/placeholder.svg?height=512&width=512") // Reduced texture size
 
   for (let i = 0; i < 6; i++) {
     const material = new THREE.MeshBasicMaterial({
@@ -297,8 +312,9 @@ function createSkybox() {
   return skyboxMesh
 }
 
-// Optimized Moving Starfield
-function createStarField(count = 10000) {
+// Optimized Moving Starfield - REDUCED PARTICLE COUNT
+function createStarField(count = 5000) {
+  // Reduced from 10000
   const geometry = new THREE.BufferGeometry()
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
@@ -394,18 +410,18 @@ function createStarField(count = 10000) {
   return stars
 }
 
-// Create 3D Visualizer Bars
+// Create 3D Visualizer Bars - OPTIMIZED
 function createVisualizerBars() {
   const bars = []
-  const barCount = 64
+  const barCount = 32 // Reduced from 64
   const barWidth = 0.2
   const barDepth = 0.2
   const spacing = 0.3
-  const totalWidth = barCount * (barWidth + spacing)
+
+  // Create a single geometry for all bars
+  const geometry = new THREE.BoxGeometry(barWidth, 0.1, barDepth)
 
   for (let i = 0; i < barCount; i++) {
-    const geometry = new THREE.BoxGeometry(barWidth, 0.1, barDepth)
-
     // Calculate hue based on position
     const hue = (i / barCount) * 360
     const color = new THREE.Color().setHSL(hue / 360, 0.8, 0.5)
@@ -437,13 +453,15 @@ function createVisualizerBars() {
   return bars
 }
 
-// Create Energy Waves
+// Create Energy Waves - OPTIMIZED
 function createEnergyWaves() {
   const waves = []
-  const waveCount = 5
+  const waveCount = 3 // Reduced from 5
+
+  // Create a single geometry for all waves
+  const geometry = new THREE.TorusGeometry(2, 0.05, 16, 64) // Reduced segments
 
   for (let i = 0; i < waveCount; i++) {
-    const geometry = new THREE.TorusGeometry(2 + i * 0.5, 0.05, 16, 100)
     const material = new THREE.MeshPhongMaterial({
       color: new THREE.Color().setHSL(i / waveCount, 0.8, 0.5),
       emissive: new THREE.Color().setHSL(i / waveCount, 0.9, 0.3),
@@ -472,12 +490,12 @@ function createEnergyWaves() {
   return waves
 }
 
-// Create Lightning Effect
+// Create Lightning Effect - OPTIMIZED
 function createLightningEffect() {
   if (!isPlaying) return
 
   const points = []
-  const segmentCount = 10
+  const segmentCount = 8 // Reduced from 10
   const maxOffset = 2
 
   // Create a zigzag path
@@ -490,7 +508,7 @@ function createLightningEffect() {
   }
 
   const curve = new THREE.CatmullRomCurve3(points)
-  const geometry = new THREE.TubeGeometry(curve, 20, 0.05, 8, false)
+  const geometry = new THREE.TubeGeometry(curve, 16, 0.05, 6, false) // Reduced segments
 
   // Random color for the lightning
   const hue = Math.random()
@@ -512,18 +530,19 @@ function createLightningEffect() {
   })
 }
 
-// Optimized Floating Crystals
+// Optimized Floating Crystals - REDUCED COUNT
 function createFloatingCrystals() {
   const crystals = []
-  const count = 15
+  const count = 8 // Reduced from 15
+
+  // Create a single geometry for all crystals
+  const geometry = new THREE.OctahedronGeometry(0.5, 0)
 
   for (let i = 0; i < count; i++) {
-    const geometry = new THREE.OctahedronGeometry(Math.random() * 0.5 + 0.2, 0)
-
     const material = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
       metalness: 0.3,
-      roughness: 0.4, // Adjusted to reduce reflection
+      roughness: 0.4,
       transmission: 0.6,
       thickness: 0.5,
       emissive: new THREE.Color().setHSL(Math.random(), 0.9, 0.4),
@@ -531,6 +550,8 @@ function createFloatingCrystals() {
     })
 
     const crystal = new THREE.Mesh(geometry, material)
+    const scale = Math.random() * 0.5 + 0.2
+    crystal.scale.set(scale, scale, scale)
 
     const radius = 8 + Math.random() * 8
     const theta = Math.random() * Math.PI * 2
@@ -567,30 +588,31 @@ function createFloatingCrystals() {
   return crystals
 }
 
-// Glowing Ring (static, no rotation)
+// Glowing Ring (static, no rotation) - OPTIMIZED
 function createGlowingRing() {
   const ringGroup = new THREE.Group()
 
-  const ringGeometry = new THREE.TorusGeometry(5, 0.15, 32, 100)
+  // Use lower polygon count for rings
+  const ringGeometry = new THREE.TorusGeometry(5, 0.15, 16, 64) // Reduced segments
   const ringMaterial = new THREE.MeshStandardMaterial({
     color: 0x000000,
     emissive: 0x00aaff,
     emissiveIntensity: 5,
     metalness: 0.9,
-    roughness: 0.3, // Adjusted to reduce reflection
+    roughness: 0.3,
   })
   const ring = new THREE.Mesh(ringGeometry, ringMaterial)
   ring.position.y = 0.1
   ring.rotation.x = Math.PI / 2
   ringGroup.add(ring)
 
-  const innerRingGeometry = new THREE.TorusGeometry(4.7, 0.08, 32, 100)
+  const innerRingGeometry = new THREE.TorusGeometry(4.7, 0.08, 16, 64) // Reduced segments
   const innerRingMaterial = new THREE.MeshStandardMaterial({
     color: 0x000000,
     emissive: 0xff5500,
     emissiveIntensity: 4,
     metalness: 0.9,
-    roughness: 0.3, // Adjusted to reduce reflection
+    roughness: 0.3,
   })
   const innerRing = new THREE.Mesh(innerRingGeometry, innerRingMaterial)
   innerRing.position.y = 0.1
@@ -605,20 +627,20 @@ function createGlowingRing() {
   return ringGroup
 }
 
-// Create Asteroid Belt
+// Create Asteroid Belt - OPTIMIZED
 function createAsteroidBelts() {
   const belts = []
-  const beltCount = 3
+  const beltCount = 2 // Reduced from 3
 
   for (let b = 0; b < beltCount; b++) {
     const beltGroup = new THREE.Group()
-    const asteroidCount = 150 + Math.floor(Math.random() * 100)
+    const asteroidCount = 80 + Math.floor(Math.random() * 50) // Reduced from 150+100
     const beltRadius = 25 + b * 15
     const beltThickness = 5 + b * 2
     const beltHeight = 10 + b * 5
 
     // Create galaxy core for this belt
-    const galaxyCoreGeometry = new THREE.SphereGeometry(3 + b * 1.5, 32, 32)
+    const galaxyCoreGeometry = new THREE.SphereGeometry(3 + b * 1.5, 16, 16) // Reduced segments
     const galaxyCoreMaterial = new THREE.MeshPhongMaterial({
       color: 0x000000,
       emissive: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
@@ -638,25 +660,21 @@ function createAsteroidBelts() {
     beltGroup.position.copy(galaxyCore.position)
     scene.add(galaxyCore)
 
+    // Create shared geometries for asteroids
+    const asteroidGeometries = [
+      new THREE.DodecahedronGeometry(1, 0),
+      new THREE.OctahedronGeometry(1, 0),
+      new THREE.TetrahedronGeometry(1, 0),
+    ]
+
     // Create asteroids for this belt
     for (let i = 0; i < asteroidCount; i++) {
       // Randomize asteroid size
       const size = Math.random() * 0.8 + 0.2
 
-      // Create asteroid geometry with random shape
-      let asteroidGeometry
-      const shapeType = Math.random()
-
-      if (shapeType < 0.5) {
-        // Irregular polyhedron
-        asteroidGeometry = new THREE.DodecahedronGeometry(size, 0)
-      } else if (shapeType < 0.8) {
-        // More complex shape
-        asteroidGeometry = new THREE.OctahedronGeometry(size, 1)
-      } else {
-        // Simple shape
-        asteroidGeometry = new THREE.TetrahedronGeometry(size, 0)
-      }
+      // Use one of the shared geometries
+      const geometryIndex = Math.floor(Math.random() * asteroidGeometries.length)
+      const asteroidGeometry = asteroidGeometries[geometryIndex]
 
       // Create material with random color tint
       const hue = 0.05 + Math.random() * 0.1 // Brownish/grayish
@@ -670,15 +688,16 @@ function createAsteroidBelts() {
       })
 
       const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial)
+      asteroid.scale.set(size, size, size)
 
       // Position asteroid in an elliptical orbit
       const angle = Math.random() * Math.PI * 2
       const radiusVariation = (Math.random() - 0.5) * beltThickness
-      const heightVariation = (Math.random() - 0.5) * beltHeight
+      const asteroidHeightVariation = (Math.random() - 0.5) * beltHeight
 
       asteroid.position.x = Math.cos(angle) * (beltRadius + radiusVariation)
       asteroid.position.z = Math.sin(angle) * (beltRadius + radiusVariation)
-      asteroid.position.y = heightVariation
+      asteroid.position.y = asteroidHeightVariation
 
       // Random rotation
       asteroid.rotation.x = Math.random() * Math.PI * 2
@@ -703,8 +722,8 @@ function createAsteroidBelts() {
       beltGroup.add(asteroid)
     }
 
-    // Add dust particles around the belt
-    const dustCount = 2000
+    // Add dust particles around the belt - REDUCED COUNT
+    const dustCount = 1000 // Reduced from 2000
     const dustGeometry = new THREE.BufferGeometry()
     const dustPositions = new Float32Array(dustCount * 3)
     const dustColors = new Float32Array(dustCount * 3)
@@ -713,6 +732,9 @@ function createAsteroidBelts() {
     for (let i = 0; i < dustCount; i++) {
       const angle = Math.random() * Math.PI * 2
       const radiusVariation = (Math.random() - 0.5) * beltThickness * 2
+      const heightVariation = (Math.random() - 0.5) * beltHeight * 1.5
+      \
+        - 0.5) * beltThickness * 2
       const heightVariation = (Math.random() - 0.5) * beltHeight * 1.5
 
       dustPositions[i * 3] = Math.cos(angle) * (beltRadius + radiusVariation)
@@ -763,16 +785,16 @@ function createAsteroidBelts() {
   return belts
 }
 
-// Create Wormholes
+// Create Wormholes - OPTIMIZED
 function createWormholes() {
-  const wormholeCount = 3
+  const wormholeCount = 2 // Reduced from 3
   const wormholes = []
 
   for (let i = 0; i < wormholeCount; i++) {
     const wormholeGroup = new THREE.Group()
 
-    // Create the wormhole tunnel
-    const tunnelGeometry = new THREE.TorusGeometry(4, 2, 32, 100)
+    // Create the wormhole tunnel with reduced geometry
+    const tunnelGeometry = new THREE.TorusGeometry(4, 2, 16, 64) // Reduced segments
     const tunnelMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
@@ -841,8 +863,8 @@ function createWormholes() {
     wormholeGroup.rotation.y = Math.random() * Math.PI
     wormholeGroup.rotation.z = Math.random() * Math.PI
 
-    // Add energy particles around the wormhole
-    const particleCount = 500
+    // Add energy particles around the wormhole - REDUCED COUNT
+    const particleCount = 250 // Reduced from 500
     const particleGeometry = new THREE.BufferGeometry()
     const particlePositions = new Float32Array(particleCount * 3)
     const particleColors = new Float32Array(particleCount * 3)
@@ -908,10 +930,10 @@ function createWormholes() {
   return wormholes
 }
 
-// Create Sound Wave Plane
+// Create Sound Wave Plane - OPTIMIZED
 function createSoundWavePlane() {
-  // Create a plane geometry with many segments for detailed wave movement
-  const planeGeometry = new THREE.PlaneGeometry(60, 40, 128, 128)
+  // Create a plane geometry with reduced segments
+  const planeGeometry = new THREE.PlaneGeometry(60, 40, 64, 64) // Reduced from 128x128
 
   // Create shader material for the wave effect
   const waveMaterial = new THREE.ShaderMaterial({
@@ -1019,14 +1041,14 @@ function createSoundWavePlane() {
   return plane
 }
 
-// Enhanced Lighting Setup - BRIGHTNESS IMPROVEMENTS
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6) // Increased from 0.3 to 0.6
+// OPTIMIZED LIGHTING SETUP - Reduced number of lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2) // Increased from 0.5 to 1.2
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
 directionalLight.position.set(5, 10, 8)
 directionalLight.castShadow = true
-directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.mapSize.set(512, 512) // Reduced from 1024x1024
 directionalLight.shadow.camera.near = 1
 directionalLight.shadow.camera.far = 50
 directionalLight.shadow.camera.left = -10
@@ -1036,47 +1058,27 @@ directionalLight.shadow.camera.bottom = -10
 directionalLight.shadow.bias = -0.0005
 scene.add(directionalLight)
 
-const fillLight = new THREE.DirectionalLight(0xffffee, 3.5) // Increased from 2 to 3.5
+const fillLight = new THREE.DirectionalLight(0xffffee, 3.5)
 fillLight.position.set(-5, 5, 15)
 scene.add(fillLight)
 
-const spotLight = new THREE.SpotLight(0xffffff, 50, 100, 0.3, 0.5) // Increased from 30 to 50
+const spotLight = new THREE.SpotLight(0xffffff, 50, 100, 0.3, 0.5)
 spotLight.position.set(0, 15, 0)
 spotLight.castShadow = true
 spotLight.shadow.bias = -0.0001
 scene.add(spotLight)
 
-const rimLight1 = new THREE.PointLight(0xff3300, 12, 3) // Increased from 8 to 12, distance from 2 to 3
+// Reduced number of rim lights
+const rimLight1 = new THREE.PointLight(0xff3300, 12, 3)
 rimLight1.position.set(-10, 5, 0)
 scene.add(rimLight1)
 
-const rimLight2 = new THREE.PointLight(0x00aaff, 12, 2) // Increased from 8 to 12, distance from 1 to 2
+const rimLight2 = new THREE.PointLight(0x00aaff, 12, 2)
 rimLight2.position.set(10, 5, 0)
 scene.add(rimLight2)
 
-const movingLight1 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5) // Increased intensity from 0.5 to 1.0
-movingLight1.position.set(0, 0, 0)
-scene.add(movingLight1)
-
-const movingLight2 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5) // Increased intensity from 0.5 to 1.0
-movingLight2.position.set(0, 0, 0)
-scene.add(movingLight2)
-
-const helper1 = new THREE.PointLightHelper(movingLight1, 0.5)
-scene.add(helper1)
-
-const helper2 = new THREE.PointLightHelper(movingLight2, 0.5)
-scene.add(helper2)
-
-movingLight1.castShadow = true
-movingLight1.shadow.mapSize.width = 1024
-movingLight1.shadow.mapSize.height = 1024
-
-movingLight2.castShadow = true
-movingLight2.shadow.mapSize.width = 1024
-movingLight2.shadow.mapSize.height = 1024
-
-const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, 1.0) // Increased from 0.6 to 1.0
+// Removed helper lights to improve performance
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, 1.0)
 scene.add(hemiLight)
 
 // Add a new light specifically for the model
@@ -1084,21 +1086,15 @@ const modelFillLight = new THREE.DirectionalLight(0xffffff, 2.0)
 modelFillLight.position.set(0, 3, 5)
 scene.add(modelFillLight)
 
-// Initialize scene elements
+// Initialize scene elements - LAZY LOADING
+// Only create essential elements initially, load others after model is loaded
 starField = createStarField()
-floatingCrystals = createFloatingCrystals()
 ring = createGlowingRing()
-skybox = createSkybox()
-visualizerBars = createVisualizerBars()
-energyWaves = createEnergyWaves()
-asteroidBelts = createAsteroidBelts()
-wormholes = createWormholes()
-soundWavePlane = createSoundWavePlane()
 
 // Optimized Thruster Particles
 function createThrusterParticles() {
   const thrusterGeometry = new THREE.BufferGeometry()
-  const thrusterCount = 100
+  const thrusterCount = 50 // Reduced from 100
   const thrusterPositions = new Float32Array(thrusterCount * 3)
   const thrusterVelocities = new Float32Array(thrusterCount * 3)
   const thrusterColors = new Float32Array(thrusterCount * 3)
@@ -1137,7 +1133,7 @@ function createThrusterParticles() {
 // Optimized Particle Burst
 function createBurstParticles() {
   const burstGeometry = new THREE.BufferGeometry()
-  const burstCount = 100
+  const burstCount = 50 // Reduced from 100
   const burstPositions = new Float32Array(burstCount * 3)
   const burstVelocities = new Float32Array(burstCount * 3)
   const burstColors = new Float32Array(burstCount * 3)
@@ -1178,7 +1174,7 @@ function createBurstParticles() {
   return new THREE.Points(burstGeometry, burstMaterial)
 }
 
-// Optimized Post-Processing Setup - BRIGHTNESS IMPROVEMENTS
+// Optimized Post-Processing Setup
 function setupPostProcessing() {
   composer = new EffectComposer(renderer)
 
@@ -1186,10 +1182,10 @@ function setupPostProcessing() {
   composer.addPass(renderPass)
 
   const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.7, // Increased from 0.5 - bloom strength
-    0.4, // Radius stays the same
-    0.85, // Threshold stays the same
+    new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), // Reduced resolution
+    0.7,
+    0.4,
+    0.85,
   )
   composer.addPass(bloomPass)
 
@@ -1198,29 +1194,33 @@ function setupPostProcessing() {
   composer.addPass(rgbShiftPass)
 }
 
-// Load GLTF Model - BRIGHTNESS IMPROVEMENTS
-const loader = new GLTFLoader().setPath("public/collinship/")
+// Load GLTF Model - OPTIMIZED
+const loader = new GLTFLoader()
 loader.load(
-  "collin.gltf",
+  "public/collinship/collin.gltf",
   (gltf) => {
     console.log("loading model")
-    spaceship = gltf.scene // Assign the entire scene to spaceship variable
+    spaceship = gltf.scene
 
+    // Optimize model
     spaceship.traverse((child) => {
       if (child.isMesh) {
+        // Simplify geometry if possible
+        if (child.geometry) {
+          child.geometry.dispose() // Clean up original geometry
+        }
+
         if (child.material) {
-          child.material.metalness = 0.7 // Reduced from 0.8 to reduce reflections
-          child.material.roughness = 0.3 // Reduced from 0.4 to increase shininess
-          child.material.envMapIntensity = 2.0 // Increased from 1.5
-          child.material.emissive = new THREE.Color(0x555555) // Brighter emissive color
-          child.material.emissiveIntensity = 0.5 // Increased from 0.2
+          child.material.metalness = 0.7
+          child.material.roughness = 0.3
+          child.material.envMapIntensity = 2.0
+          child.material.emissive = new THREE.Color(0x555555)
+          child.material.emissiveIntensity = 0.5
 
           // Brighten the base color if it exists
           if (child.material.color) {
-            // Get current HSL values
             const hsl = { h: 0, s: 0, l: 0 }
             child.material.color.getHSL(hsl)
-            // Increase lightness by 20% but cap at 1.0
             hsl.l = Math.min(1.0, hsl.l * 1.2)
             child.material.color.setHSL(hsl.h, hsl.s, hsl.l)
           }
@@ -1235,7 +1235,7 @@ loader.load(
     spaceship.scale.set(0.5, 0.5, 0.5)
     scene.add(spaceship)
 
-    const engineGlow = new THREE.PointLight(0x00aaff, 12, 6) // Increased from 8 to 12, distance from 4 to 6
+    const engineGlow = new THREE.PointLight(0x00aaff, 12, 6)
     engineGlow.position.set(0, 0.5, 2)
     spaceship.add(engineGlow)
 
@@ -1243,26 +1243,17 @@ loader.load(
     spaceship.add(thrusterParticles)
 
     // Enhanced model lighting
-    const modelSpotlight = new THREE.SpotLight(0xffffff, 30, 20, 0.5, 0.5) // Increased from 20 to 30
+    const modelSpotlight = new THREE.SpotLight(0xffffff, 30, 20, 0.5, 0.5)
     modelSpotlight.position.set(0, 10, 5)
     modelSpotlight.target = spaceship
     scene.add(modelSpotlight)
 
-    const modelUplight = new THREE.SpotLight(0xffffee, 15, 15, 0.6, 0.5) // Increased from 10 to 15
+    const modelUplight = new THREE.SpotLight(0xffffee, 15, 15, 0.6, 0.5)
     modelUplight.position.set(0, -2, 5)
     modelUplight.target = spaceship
     scene.add(modelUplight)
 
-    // Add new lights specifically for the model
-    const modelFrontLight = new THREE.SpotLight(0xffffff, 20, 20, 0.5, 0.5)
-    modelFrontLight.position.set(0, 2, 8)
-    modelFrontLight.target = spaceship
-    scene.add(modelFrontLight)
-
-    const modelSideLight = new THREE.PointLight(0xffffee, 10, 10)
-    modelSideLight.position.set(5, 2, 0)
-    spaceship.add(modelSideLight)
-
+    // Hide progress container
     const progressContainer = document.getElementById("progress-container")
     if (progressContainer) {
       progressContainer.style.display = "none"
@@ -1276,6 +1267,27 @@ loader.load(
     if (playButton) {
       playButton.style.display = "block"
     }
+
+    // Lazy load remaining scene elements
+    setTimeout(() => {
+      floatingCrystals = createFloatingCrystals()
+      skybox = createSkybox()
+      visualizerBars = createVisualizerBars()
+      energyWaves = createEnergyWaves()
+
+      // Load these elements only when needed (on first audio play)
+      document.getElementById("play-button").addEventListener(
+        "click",
+        () => {
+          if (!asteroidBelts.length) {
+            asteroidBelts = createAsteroidBelts()
+            wormholes = createWormholes()
+            soundWavePlane = createSoundWavePlane()
+          }
+        },
+        { once: true },
+      )
+    }, 1000)
   },
   (xhr) => {
     const progressPercent = xhr.total > 0 ? ((xhr.loaded / xhr.total) * 100).toFixed(0) : 0
@@ -1307,17 +1319,23 @@ document.addEventListener("mousemove", (event) => {
   mouseY = -(event.clientY / window.innerHeight) * 2 + 1
 })
 
+// Debounced resize handler
+let resizeTimeout
 window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  if (composer) composer.setSize(window.innerWidth, window.innerHeight)
+  if (resizeTimeout) clearTimeout(resizeTimeout)
 
-  // Resize visualizer canvas if it exists
-  if (visualizerCanvas) {
-    visualizerCanvas.width = visualizerCanvas.clientWidth
-    visualizerCanvas.height = visualizerCanvas.clientHeight
-  }
+  resizeTimeout = setTimeout(() => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    if (composer) composer.setSize(window.innerWidth, window.innerHeight)
+
+    // Resize visualizer canvas if it exists
+    if (visualizerCanvas) {
+      visualizerCanvas.width = visualizerCanvas.clientWidth
+      visualizerCanvas.height = visualizerCanvas.clientHeight
+    }
+  }, 250)
 })
 
 document.addEventListener("click", () => {
@@ -1397,9 +1415,20 @@ function pulseWormholes() {
 // Setup Post-Processing
 setupPostProcessing()
 
+// Frame rate limiter
+const targetFPS = 30
+const frameTime = 1000 / targetFPS
+let lastFrameTime = 0
+
 // Optimized Animation Loop
-function animate() {
+function animate(currentTime) {
   requestAnimationFrame(animate)
+
+  // Limit frame rate for better performance
+  if (currentTime - lastFrameTime < frameTime) {
+    return
+  }
+  lastFrameTime = currentTime
 
   try {
     const elapsedTime = clock.getElapsedTime()
@@ -1479,15 +1508,20 @@ function animate() {
           belt.core.scale.set(scale, scale, scale)
         }
 
-        // Update individual asteroids
-        belt.group.children.forEach((child) => {
+        // Update individual asteroids - only update a subset per frame for performance
+        const childCount = belt.group.children.length
+        const updateCount = Math.min(childCount, 20) // Only update 20 asteroids per frame
+        const startIdx = Math.floor(Math.random() * (childCount - updateCount))
+
+        for (let i = startIdx; i < startIdx + updateCount; i++) {
+          const child = belt.group.children[i]
           if (child instanceof THREE.Mesh && child.userData && child.userData.rotationSpeed) {
             // Rotate asteroids individually
             child.rotation.x += child.userData.rotationSpeed.x * (1 + midAvg)
             child.rotation.y += child.userData.rotationSpeed.y * (1 + midAvg)
             child.rotation.z += child.userData.rotationSpeed.z * (1 + midAvg)
           }
-        })
+        }
       })
     }
 
@@ -1640,6 +1674,7 @@ function animate() {
         starField.material.uniforms.audioIntensity.value = trebleAvg
       }
 
+      // Only update a subset of stars each frame for better performance
       if (starField.geometry.attributes.position && starField.geometry.attributes.velocity) {
         const positions = starField.geometry.attributes.position.array
         const velocities = starField.geometry.attributes.velocity.array
@@ -1648,7 +1683,8 @@ function animate() {
         // Speed up star movement based on treble
         const speedMultiplier = 1 + trebleAvg * 2
 
-        const updateCount = Math.min(count, 2000)
+        // Only update a subset of stars each frame
+        const updateCount = Math.min(count, 1000) // Reduced from 2000
         const startIdx = Math.floor(Math.random() * (count - updateCount))
 
         for (let i = startIdx; i < startIdx + updateCount; i++) {
@@ -1672,14 +1708,19 @@ function animate() {
     }
 
     if (floatingCrystals && floatingCrystals.length > 0) {
-      floatingCrystals.forEach((crystal, index) => {
-        if (!crystal) return
+      // Only update a subset of crystals each frame
+      const updateCount = Math.min(floatingCrystals.length, 4)
+      const startIdx = Math.floor(Math.random() * (floatingCrystals.length - updateCount))
+
+      for (let i = startIdx; i < startIdx + updateCount; i++) {
+        const crystal = floatingCrystals[i]
+        if (!crystal) continue
 
         const data = crystal.userData
-        if (!data) return
+        if (!data) continue
 
         // Make crystals react to mid frequencies
-        const audioIndex = index % (midData ? midData.length : 1)
+        const audioIndex = i % (midData ? midData.length : 1)
         const audioValue = isPlaying && midData ? midData[audioIndex] : 0
         const audioBoost = audioValue * 3
 
@@ -1705,7 +1746,7 @@ function animate() {
             crystal.material.emissiveIntensity = 0.6 + Math.sin(elapsedTime * 2 + data.floatOffset) * 0.2 + audioBoost
           }
         }
-      })
+      }
     }
 
     if (ring && ring.children && ring.children.length > 0) {
@@ -1751,18 +1792,6 @@ function animate() {
     const spotHue = (elapsedTime * 0.02 + trebleAvg * 0.1) % 1
     spotLight.color.setHSL(spotHue, 0.5, 0.6)
 
-    const movingAngle1 = elapsedTime * 0.5
-    movingLight1.position.x = Math.sin(movingAngle1) * 10
-    movingLight1.position.y = 5 + Math.sin(elapsedTime * 0.7) * 2 + midAvg * 3
-    movingLight1.position.z = Math.cos(movingAngle1) * 10
-    movingLight1.intensity = 0.5 + bassAvg * 2
-
-    const movingAngle2 = elapsedTime * 0.5 + Math.PI
-    movingLight2.position.x = Math.sin(movingAngle2) * 10
-    movingLight2.position.y = 5 + Math.cos(elapsedTime * 0.7) * 2 + trebleAvg * 3
-    movingLight2.position.z = Math.cos(movingAngle2) * 10
-    movingLight2.intensity = 0.5 + trebleAvg * 2
-
     if (burstParticles && burstParticles.geometry.attributes.position) {
       const positions = burstParticles.geometry.attributes.position.array
       const velocities = burstParticles.geometry.attributes.velocity.array
@@ -1803,4 +1832,5 @@ function animate() {
   }
 }
 
-animate()
+animate(0)
+
