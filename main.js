@@ -44,13 +44,14 @@ let beatDetected = false;
 // Detect if we're on mobile
 const isMobile = isMobileDevice();
 
-// Adjust quality settings based on device
+// Adjust quality settings based on device - IMPROVED QUALITY
 const qualitySettings = {
-  pixelRatio: isMobile ? 0.5 : Math.min(window.devicePixelRatio, 1.5),
-  starCount: isMobile ? 2000 : 10000,
-  crystalCount: isMobile ? 5 : 15,
-  visualizerBarCount: isMobile ? 32 : 64,
-  usePostProcessing: !isMobile,
+  // Increase pixel ratio for better quality
+  pixelRatio: isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio,
+  starCount: isMobile ? 3000 : 10000,
+  crystalCount: isMobile ? 8 : 15,
+  visualizerBarCount: isMobile ? 48 : 64,
+  usePostProcessing: true, // Enable post-processing on all devices for better quality
   useComplexShaders: !isMobile,
   asteroidBeltCount: isMobile ? 1 : 3,
   wormholeCount: isMobile ? 1 : 3,
@@ -59,8 +60,9 @@ const qualitySettings = {
 
 // Renderer setup with optimized settings
 const renderer = new THREE.WebGLRenderer({
-  antialias: !isMobile,
+  antialias: true, // Enable antialiasing on all devices
   powerPreference: "high-performance",
+  alpha: true
 });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -106,7 +108,7 @@ function setupAudio() {
 
   // Create analyser
   audioAnalyser = audioContext.createAnalyser();
-  audioAnalyser.fftSize = isMobile ? 512 : 2048; // Lower FFT size on mobile
+  audioAnalyser.fftSize = isMobile ? 1024 : 2048; // Increased FFT size for better resolution
   audioAnalyser.smoothingTimeConstant = 0.85;
 
   // Connect audio element to analyser
@@ -182,9 +184,12 @@ function setupVisualizer() {
 
   visualizerContext = visualizerCanvas.getContext("2d");
 
-  // Set canvas dimensions
-  visualizerCanvas.width = visualizerCanvas.clientWidth;
-  visualizerCanvas.height = visualizerCanvas.clientHeight;
+  // Set canvas dimensions with higher resolution for better quality
+  const dpr = window.devicePixelRatio || 1;
+  const rect = visualizerCanvas.getBoundingClientRect();
+  visualizerCanvas.width = rect.width * dpr;
+  visualizerCanvas.height = rect.height * dpr;
+  visualizerContext.scale(dpr, dpr);
 }
 
 function updateAudioData() {
@@ -251,8 +256,9 @@ function updateAudioData() {
 function drawVisualizer() {
   if (!visualizerContext || !visualizerCanvas) return;
 
-  const width = visualizerCanvas.width;
-  const height = visualizerCanvas.height;
+  const rect = visualizerCanvas.getBoundingClientRect();
+  const width = rect.width;
+  const height = rect.height;
 
   // Clear canvas
   visualizerContext.clearRect(0, 0, width, height);
@@ -285,9 +291,23 @@ function drawVisualizer() {
       hue = 180 + ((i - (barCount * 2) / 3) / (barCount / 3)) * 60;
     }
 
-    visualizerContext.fillStyle = `hsl(${hue}, 80%, 50%)`;
-    visualizerContext.fillRect(i * barWidth, height - barHeight, barWidth, barHeight);
+    // Add glow effect for better visual quality
+    const gradient = visualizerContext.createLinearGradient(0, height - barHeight, 0, height);
+    gradient.addColorStop(0, `hsla(${hue}, 100%, 60%, 1.0)`);
+    gradient.addColorStop(1, `hsla(${hue}, 80%, 40%, 0.6)`);
+    
+    visualizerContext.fillStyle = gradient;
+    visualizerContext.fillRect(i * barWidth, height - barHeight, barWidth - 1, barHeight);
+    
+    // Add glow effect
+    visualizerContext.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+    visualizerContext.shadowBlur = 10;
+    visualizerContext.shadowOffsetX = 0;
+    visualizerContext.shadowOffsetY = 0;
   }
+  
+  // Reset shadow
+  visualizerContext.shadowBlur = 0;
 }
 
 function getAverageFrequency(dataArray) {
@@ -300,20 +320,48 @@ function getAverageFrequency(dataArray) {
   return sum / dataArray.length;
 }
 
-// Create Skybox - simplified for mobile
+// Create Skybox - improved for better quality
 function createSkybox() {
   const geometry = new THREE.BoxGeometry(500, 500, 500);
   const materialArray = [];
 
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load("placeholder.svg");
+  // Create a simple gradient texture instead of loading an external one
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  
+  // Create a gradient background
+  const gradient = context.createRadialGradient(
+    size/2, size/2, 0,
+    size/2, size/2, size/2
+  );
+  gradient.addColorStop(0, '#000510');
+  gradient.addColorStop(1, '#000000');
+  
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+  
+  // Add some stars
+  context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  for (let i = 0; i < 100; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const radius = Math.random() * 1.5 + 0.5;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
 
   for (let i = 0; i < 6; i++) {
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       side: THREE.BackSide,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.5,
       color: 0x000000,
     });
     materialArray.push(material);
@@ -324,7 +372,7 @@ function createSkybox() {
   return skyboxMesh;
 }
 
-// Optimized Moving Starfield
+// Optimized Moving Starfield - improved for better quality
 function createStarField(count = qualitySettings.starCount) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(count * 3);
@@ -366,7 +414,8 @@ function createStarField(count = qualitySettings.starCount) {
     colors[i * 3 + 1] = g;
     colors[i * 3 + 2] = b;
 
-    sizes[i] = Math.random() < 0.1 ? Math.random() * 4 + 2 : Math.random() * 2 + 1;
+    // Larger stars for better visibility
+    sizes[i] = Math.random() < 0.1 ? Math.random() * 5 + 3 : Math.random() * 3 + 1.5;
 
     velocities[i * 3] = (Math.random() - 0.5) * 0.03;
     velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.03;
@@ -378,7 +427,7 @@ function createStarField(count = qualitySettings.starCount) {
   geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
   geometry.setAttribute("velocity", new THREE.BufferAttribute(velocities, 3));
 
-  // Simplified shader for mobile
+  // Enhanced shader for better quality
   const starMaterial = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
@@ -397,9 +446,9 @@ function createStarField(count = qualitySettings.starCount) {
       void main() {
         vColor = color;
         
-        // Simplified pulse effect for mobile
+        // Enhanced pulse effect
         float pulse = sin(time * 0.3) * 0.5 + 0.5;
-        gl_PointSize = size * pixelRatio * (1.0 + audioIntensity);
+        gl_PointSize = size * pixelRatio * (1.0 + audioIntensity * 0.5 + pulse * 0.2);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
@@ -409,7 +458,12 @@ function createStarField(count = qualitySettings.starCount) {
       void main() {
         float distanceToCenter = length(gl_PointCoord - vec2(0.5));
         float strength = 1.0 - smoothstep(0.0, 0.5, distanceToCenter);
-        gl_FragColor = vec4(vColor, strength);
+        
+        // Add glow effect
+        vec3 glow = vColor * 1.5 * (1.0 - distanceToCenter * 2.0);
+        vec3 finalColor = mix(vColor, glow, 0.5);
+        
+        gl_FragColor = vec4(finalColor, strength);
       }
     `,
     transparent: true,
@@ -422,7 +476,7 @@ function createStarField(count = qualitySettings.starCount) {
   return stars;
 }
 
-// Create 3D Visualizer Bars - reduced count for mobile
+// Create 3D Visualizer Bars - improved for better quality
 function createVisualizerBars() {
   const bars = [];
   const barCount = qualitySettings.visualizerBarCount;
@@ -436,19 +490,21 @@ function createVisualizerBars() {
     const hue = (i / barCount) * 360;
     const color = new THREE.Color().setHSL(hue / 360, 0.8, 0.5);
 
-    // Use standard material for mobile
+    // Enhanced materials for better quality
     const material = isMobile 
       ? new THREE.MeshBasicMaterial({
           color: color,
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.9,
         })
-      : new THREE.MeshPhongMaterial({
+      : new THREE.MeshPhysicalMaterial({
           color: color,
-          emissive: color.clone().multiplyScalar(0.3),
-          shininess: 100,
+          emissive: color.clone().multiplyScalar(0.5),
+          emissiveIntensity: 1.0,
+          metalness: 0.7,
+          roughness: 0.2,
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.9,
         });
 
     const bar = new THREE.Mesh(geometry, material);
@@ -470,7 +526,7 @@ function createVisualizerBars() {
   return bars;
 }
 
-// Create Energy Waves - skip on mobile
+// Create Energy Waves - enhanced for better quality
 function createEnergyWaves() {
   if (isMobile) return [];
   
@@ -478,13 +534,16 @@ function createEnergyWaves() {
   const waveCount = 5;
 
   for (let i = 0; i < waveCount; i++) {
-    const geometry = new THREE.TorusGeometry(2 + i * 0.5, 0.05, 16, 100);
-    const material = new THREE.MeshPhongMaterial({
+    const geometry = new THREE.TorusGeometry(2 + i * 0.5, 0.05, 32, 100);
+    const material = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color().setHSL(i / waveCount, 0.8, 0.5),
       emissive: new THREE.Color().setHSL(i / waveCount, 0.9, 0.3),
+      emissiveIntensity: 2.0,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.8,
       side: THREE.DoubleSide,
+      metalness: 0.5,
+      roughness: 0.2,
     });
 
     const wave = new THREE.Mesh(geometry, material);
@@ -507,12 +566,12 @@ function createEnergyWaves() {
   return waves;
 }
 
-// Create Lightning Effect - skip on mobile
+// Create Lightning Effect - enhanced for better quality
 function createLightningEffect() {
   if (isMobile || !isPlaying) return;
 
   const points = [];
-  const segmentCount = 10;
+  const segmentCount = 15; // Increased for smoother lightning
   const maxOffset = 2;
 
   // Create a zigzag path
@@ -525,7 +584,7 @@ function createLightningEffect() {
   }
 
   const curve = new THREE.CatmullRomCurve3(points);
-  const geometry = new THREE.TubeGeometry(curve, 20, 0.05, 8, false);
+  const geometry = new THREE.TubeGeometry(curve, 30, 0.05, 12, false);
 
   // Random color for the lightning
   const hue = Math.random();
@@ -540,36 +599,44 @@ function createLightningEffect() {
   const lightning = new THREE.Mesh(geometry, material);
   scene.add(lightning);
 
+  // Add a point light that follows the lightning for better effect
+  const lightningLight = new THREE.PointLight(color, 5, 10);
+  lightningLight.position.copy(points[Math.floor(points.length / 2)]);
+  scene.add(lightningLight);
+
   lightningEffects.push({
     mesh: lightning,
+    light: lightningLight,
     life: 1.0,
     decay: 0.05,
   });
 }
 
-// Optimized Floating Crystals - reduced count for mobile
+// Optimized Floating Crystals - enhanced for better quality
 function createFloatingCrystals() {
   const crystals = [];
   const count = qualitySettings.crystalCount;
 
   for (let i = 0; i < count; i++) {
-    const geometry = new THREE.OctahedronGeometry(Math.random() * 0.5 + 0.2, 0);
+    const geometry = new THREE.OctahedronGeometry(Math.random() * 0.5 + 0.2, 1); // Increased detail level
 
-    // Simplified material for mobile
+    // Enhanced materials for better quality
     const material = isMobile 
       ? new THREE.MeshBasicMaterial({
           color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.9,
         })
       : new THREE.MeshPhysicalMaterial({
           color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
-          metalness: 0.3,
-          roughness: 0.4,
-          transmission: 0.6,
+          metalness: 0.5,
+          roughness: 0.2,
+          transmission: 0.7,
           thickness: 0.5,
           emissive: new THREE.Color().setHSL(Math.random(), 0.9, 0.4),
-          emissiveIntensity: 0.6,
+          emissiveIntensity: 1.0,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.1,
         });
 
     const crystal = new THREE.Mesh(geometry, material);
@@ -609,24 +676,26 @@ function createFloatingCrystals() {
   return crystals;
 }
 
-// Glowing Ring (static, no rotation)
+// Glowing Ring - enhanced for better quality
 function createGlowingRing() {
   const ringGroup = new THREE.Group();
 
   const ringGeometry = new THREE.TorusGeometry(5, 0.15, 32, 100);
-  // Simplified material for mobile
+  // Enhanced materials for better quality
   const ringMaterial = isMobile
     ? new THREE.MeshBasicMaterial({
         color: 0x00aaff,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.9,
       })
-    : new THREE.MeshStandardMaterial({
+    : new THREE.MeshPhysicalMaterial({
         color: 0x000000,
         emissive: 0x00aaff,
         emissiveIntensity: 5,
         metalness: 0.9,
-        roughness: 0.3,
+        roughness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
       });
   
   const ring = new THREE.Mesh(ringGeometry, ringMaterial);
@@ -635,19 +704,21 @@ function createGlowingRing() {
   ringGroup.add(ring);
 
   const innerRingGeometry = new THREE.TorusGeometry(4.7, 0.08, 32, 100);
-  // Simplified material for mobile
+  // Enhanced materials for better quality
   const innerRingMaterial = isMobile
     ? new THREE.MeshBasicMaterial({
         color: 0xff5500,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.9,
       })
-    : new THREE.MeshStandardMaterial({
+    : new THREE.MeshPhysicalMaterial({
         color: 0x000000,
         emissive: 0xff5500,
         emissiveIntensity: 4,
         metalness: 0.9,
-        roughness: 0.3,
+        roughness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
       });
   
   const innerRing = new THREE.Mesh(innerRingGeometry, innerRingMaterial);
@@ -655,45 +726,45 @@ function createGlowingRing() {
   innerRing.rotation.x = Math.PI / 2;
   ringGroup.add(innerRing);
 
-  // Only add light on non-mobile
-  if (!isMobile) {
-    const ringLight = new THREE.PointLight(0x00aaff, 5, 10);
-    ringLight.position.set(0, 0.1, 0);
-    ringGroup.add(ringLight);
-  }
+  // Add light on all devices for better effect
+  const ringLight = new THREE.PointLight(0x00aaff, isMobile ? 3 : 5, 10);
+  ringLight.position.set(0, 0.1, 0);
+  ringGroup.add(ringLight);
 
   scene.add(ringGroup);
   return ringGroup;
 }
 
-// Create Asteroid Belt - reduced for mobile
+// Create Asteroid Belt - enhanced for better quality
 function createAsteroidBelts() {
   const belts = [];
   const beltCount = qualitySettings.asteroidBeltCount;
 
   for (let b = 0; b < beltCount; b++) {
     const beltGroup = new THREE.Group();
-    // Reduce asteroid count on mobile
-    const asteroidCount = isMobile ? 50 : (150 + Math.floor(Math.random() * 100));
+    // Improved asteroid count for better quality
+    const asteroidCount = isMobile ? 80 : (200 + Math.floor(Math.random() * 100));
     const beltRadius = 25 + b * 15;
     const beltThickness = 5 + b * 2;
     const beltHeight = 10 + b * 5;
 
     // Create galaxy core for this belt
     const galaxyCoreGeometry = new THREE.SphereGeometry(3 + b * 1.5, 32, 32);
-    // Simplified material for mobile
+    // Enhanced materials for better quality
     const galaxyCoreMaterial = isMobile
       ? new THREE.MeshBasicMaterial({
           color: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.9,
         })
-      : new THREE.MeshPhongMaterial({
+      : new THREE.MeshPhysicalMaterial({
           color: 0x000000,
           emissive: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
-          emissiveIntensity: 2,
+          emissiveIntensity: 3,
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.9,
+          metalness: 0.7,
+          roughness: 0.2,
         });
 
     const galaxyCore = new THREE.Mesh(galaxyCoreGeometry, galaxyCoreMaterial);
@@ -712,7 +783,7 @@ function createAsteroidBelts() {
       // Randomize asteroid size
       const size = Math.random() * 0.8 + 0.2;
 
-      // Create asteroid geometry with random shape
+      // Create asteroid geometry with random shape - increased detail
       let asteroidGeometry;
       const shapeType = Math.random();
 
@@ -727,7 +798,7 @@ function createAsteroidBelts() {
         asteroidGeometry = new THREE.TetrahedronGeometry(size, 0);
       }
 
-      // Create material with random color tint - simplified for mobile
+      // Create material with random color tint - enhanced for better quality
       const hue = 0.05 + Math.random() * 0.1; // Brownish/grayish
       const saturation = 0.3 + Math.random() * 0.3;
       const lightness = 0.2 + Math.random() * 0.3;
@@ -740,6 +811,7 @@ function createAsteroidBelts() {
             color: new THREE.Color().setHSL(hue, saturation, lightness),
             roughness: 0.8 + Math.random() * 0.2,
             metalness: Math.random() * 0.3,
+            envMapIntensity: 1.0,
           });
 
       const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
@@ -776,54 +848,52 @@ function createAsteroidBelts() {
       beltGroup.add(asteroid);
     }
 
-    // Add dust particles around the belt - skip or reduce on mobile
-    if (!isMobile) {
-      const dustCount = isMobile ? 500 : 2000;
-      const dustGeometry = new THREE.BufferGeometry();
-      const dustPositions = new Float32Array(dustCount * 3);
-      const dustColors = new Float32Array(dustCount * 3);
-      const dustSizes = new Float32Array(dustCount);
+    // Add dust particles around the belt - improved for better quality
+    const dustCount = isMobile ? 800 : 3000;
+    const dustGeometry = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(dustCount * 3);
+    const dustColors = new Float32Array(dustCount * 3);
+    const dustSizes = new Float32Array(dustCount);
 
-      for (let i = 0; i < dustCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radiusVariation = (Math.random() - 0.5) * beltThickness * 2;
-        const heightVariation = (Math.random() - 0.5) * beltHeight * 1.5;
+    for (let i = 0; i < dustCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radiusVariation = (Math.random() - 0.5) * beltThickness * 2;
+      const heightVariation = (Math.random() - 0.5) * beltHeight * 1.5;
 
-        dustPositions[i * 3] = Math.cos(angle) * (beltRadius + radiusVariation);
-        dustPositions[i * 3 + 1] = heightVariation;
-        dustPositions[i * 3 + 2] = Math.sin(angle) * (beltRadius + radiusVariation);
+      dustPositions[i * 3] = Math.cos(angle) * (beltRadius + radiusVariation);
+      dustPositions[i * 3 + 1] = heightVariation;
+      dustPositions[i * 3 + 2] = Math.sin(angle) * (beltRadius + radiusVariation);
 
-        // Dust color based on galaxy core with variation
-        const coreColor = galaxyCoreMaterial.color || new THREE.Color(0xffffff);
-        const hue = (Math.random() - 0.5) * 0.1 + 0.5;
-        const saturation = 0.7 + Math.random() * 0.3;
-        const lightness = 0.5 + Math.random() * 0.3;
+      // Dust color based on galaxy core with variation
+      const coreColor = galaxyCoreMaterial.color || new THREE.Color(0xffffff);
+      const hue = (Math.random() - 0.5) * 0.1 + 0.5;
+      const saturation = 0.7 + Math.random() * 0.3;
+      const lightness = 0.5 + Math.random() * 0.3;
 
-        const color = new THREE.Color().setHSL(hue, saturation, lightness);
+      const color = new THREE.Color().setHSL(hue, saturation, lightness);
 
-        dustColors[i * 3] = color.r;
-        dustColors[i * 3 + 1] = color.g;
-        dustColors[i * 3 + 2] = color.b;
+      dustColors[i * 3] = color.r;
+      dustColors[i * 3 + 1] = color.g;
+      dustColors[i * 3 + 2] = color.b;
 
-        dustSizes[i] = Math.random() * 0.5 + 0.1;
-      }
-
-      dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
-      dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
-      dustGeometry.setAttribute("size", new THREE.BufferAttribute(dustSizes, 1));
-
-      const dustMaterial = new THREE.PointsMaterial({
-        size: 0.1,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.6,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-
-      const dustParticles = new THREE.Points(dustGeometry, dustMaterial);
-      beltGroup.add(dustParticles);
+      dustSizes[i] = Math.random() * 0.5 + 0.2; // Slightly larger for better visibility
     }
+
+    dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
+    dustGeometry.setAttribute("size", new THREE.BufferAttribute(dustSizes, 1));
+
+    const dustMaterial = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    const dustParticles = new THREE.Points(dustGeometry, dustMaterial);
+    beltGroup.add(dustParticles);
 
     // Add belt to scene and store in array
     scene.add(beltGroup);
@@ -838,7 +908,7 @@ function createAsteroidBelts() {
   return belts;
 }
 
-// Create Wormholes - reduced for mobile
+// Create Wormholes - enhanced for better quality
 function createWormholes() {
   const wormholeCount = qualitySettings.wormholeCount;
   const wormholes = [];
@@ -846,15 +916,15 @@ function createWormholes() {
   for (let i = 0; i < wormholeCount; i++) {
     const wormholeGroup = new THREE.Group();
 
-    // Create the wormhole tunnel - simplified for mobile
-    const tunnelGeometry = new THREE.TorusGeometry(4, 2, 32, 100);
+    // Create the wormhole tunnel - improved for better quality
+    const tunnelGeometry = new THREE.TorusGeometry(4, 2, 48, 120);
     
-    // Use simpler material on mobile
+    // Enhanced materials for better quality
     const tunnelMaterial = isMobile 
       ? new THREE.MeshBasicMaterial({
           color: new THREE.Color().setHSL(Math.random(), 0.8, 0.5),
           transparent: true,
-          opacity: 0.7,
+          opacity: 0.8,
           side: THREE.DoubleSide,
         })
       : new THREE.ShaderMaterial({
@@ -883,26 +953,35 @@ function createWormholes() {
             varying vec2 vUv;
             varying vec3 vPosition;
             
+            // Improved noise function for better visual quality
+            float noise(vec2 p) {
+              return sin(p.x * 10.0) * sin(p.y * 10.0) * 0.5 + 0.5;
+            }
+            
             void main() {
-              // Create swirling effect
-              float noise = sin(vUv.x * 20.0 + time * 2.0) * 0.5 + 0.5;
-              noise *= sin(vUv.y * 15.0 - time * 3.0) * 0.5 + 0.5;
+              // Create swirling effect with improved noise
+              float noise1 = noise(vUv * 20.0 + vec2(time * 2.0, 0.0));
+              float noise2 = noise(vUv * 15.0 + vec2(0.0, -time * 3.0));
+              float combinedNoise = noise1 * noise2;
               
               // Add pulse effect
               float pulse = sin(time * 5.0) * 0.5 + 0.5;
               pulse = pulse * pulseIntensity + (1.0 - pulseIntensity);
               
               // Mix colors based on noise
-              vec3 finalColor = mix(color1, color2, noise);
+              vec3 finalColor = mix(color1, color2, combinedNoise);
               
               // Apply pulse brightness
               finalColor *= pulse;
               
-              // Edge glow
+              // Enhanced edge glow
               float edge = 1.0 - abs(vUv.y - 0.5) * 2.0;
               edge = pow(edge, 3.0);
               
-              gl_FragColor = vec4(finalColor, edge * 0.7);
+              // Add subtle color variation based on position
+              finalColor += vec3(sin(vPosition.x * 0.2 + time), sin(vPosition.y * 0.2 - time), sin(vPosition.z * 0.2 + time * 0.5)) * 0.1;
+              
+              gl_FragColor = vec4(finalColor, edge * 0.8);
             }
           `,
           transparent: true,
@@ -925,62 +1004,63 @@ function createWormholes() {
     wormholeGroup.rotation.y = Math.random() * Math.PI;
     wormholeGroup.rotation.z = Math.random() * Math.PI;
 
-    // Add energy particles around the wormhole - skip on mobile or reduce count
-    if (!isMobile) {
-      const particleCount = 500;
-      const particleGeometry = new THREE.BufferGeometry();
-      const particlePositions = new Float32Array(particleCount * 3);
-      const particleColors = new Float32Array(particleCount * 3);
+    // Add energy particles around the wormhole - improved for better quality
+    const particleCount = isMobile ? 300 : 800;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+    const particleSizes = new Float32Array(particleCount);
 
-      for (let j = 0; j < particleCount; j++) {
-        // Position particles in a torus shape around the wormhole
-        const angle1 = Math.random() * Math.PI * 2;
-        const angle2 = Math.random() * Math.PI * 2;
-        const radius = 4 + (Math.random() - 0.5) * 1.5;
+    for (let j = 0; j < particleCount; j++) {
+      // Position particles in a torus shape around the wormhole
+      const angle1 = Math.random() * Math.PI * 2;
+      const angle2 = Math.random() * Math.PI * 2;
+      const radius = 4 + (Math.random() - 0.5) * 1.5;
 
-        particlePositions[j * 3] = (radius + Math.cos(angle2) * 1.5) * Math.cos(angle1);
-        particlePositions[j * 3 + 1] = (radius + Math.cos(angle2) * 1.5) * Math.sin(angle1);
-        particlePositions[j * 3 + 2] = Math.sin(angle2) * 1.5;
+      particlePositions[j * 3] = (radius + Math.cos(angle2) * 1.5) * Math.cos(angle1);
+      particlePositions[j * 3 + 1] = (radius + Math.cos(angle2) * 1.5) * Math.sin(angle1);
+      particlePositions[j * 3 + 2] = Math.sin(angle2) * 1.5;
 
-        // Match particle colors to wormhole colors
-        const color = isMobile 
-          ? new THREE.Color(0xffffff) 
-          : tunnelMaterial.uniforms.color1.value.clone();
-        
-        if (!isMobile) {
-          color.lerp(tunnelMaterial.uniforms.color2.value, Math.random());
-        }
-
-        particleColors[j * 3] = color.r;
-        particleColors[j * 3 + 1] = color.g;
-        particleColors[j * 3 + 2] = color.b;
+      // Match particle colors to wormhole colors
+      const color = isMobile 
+        ? new THREE.Color(0xffffff) 
+        : tunnelMaterial.uniforms.color1.value.clone();
+      
+      if (!isMobile) {
+        color.lerp(tunnelMaterial.uniforms.color2.value, Math.random());
       }
 
-      particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
-      particleGeometry.setAttribute("color", new THREE.BufferAttribute(particleColors, 3));
-
-      const particleMaterial = new THREE.PointsMaterial({
-        size: 0.2,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-
-      const particles = new THREE.Points(particleGeometry, particleMaterial);
-      wormholeGroup.add(particles);
+      particleColors[j * 3] = color.r;
+      particleColors[j * 3 + 1] = color.g;
+      particleColors[j * 3 + 2] = color.b;
+      
+      // Varied particle sizes for better visual quality
+      particleSizes[j] = Math.random() * 0.3 + 0.1;
     }
 
-    // Add glow light - skip on mobile
-    if (!isMobile) {
-      const wormholeLight = new THREE.PointLight(
-        isMobile ? 0xffffff : tunnelMaterial.uniforms.color1.value, 
-        2, 
-        20
-      );
-      wormholeGroup.add(wormholeLight);
-    }
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute("color", new THREE.BufferAttribute(particleColors, 3));
+    particleGeometry.setAttribute("size", new THREE.BufferAttribute(particleSizes, 1));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      size: 0.2,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    wormholeGroup.add(particles);
+
+    // Add glow light - on all devices for better effect
+    const wormholeLight = new THREE.PointLight(
+      isMobile ? 0xffffff : tunnelMaterial.uniforms?.color1.value || new THREE.Color(0x00aaff), 
+      isMobile ? 1.5 : 3, 
+      20
+    );
+    wormholeGroup.add(wormholeLight);
 
     // Add tunnel to group
     wormholeGroup.add(tunnel);
@@ -993,8 +1073,8 @@ function createWormholes() {
       group: wormholeGroup,
       tunnel: tunnel,
       material: tunnelMaterial,
-      light: !isMobile ? wormholeGroup.children[1] : null,
-      particles: !isMobile ? wormholeGroup.children[0] : null,
+      light: wormholeGroup.children[1],
+      particles: wormholeGroup.children[0],
       rotationAxis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
       rotationSpeed: Math.random() * 0.001 + 0.0005,
       pulsing: false,
@@ -1005,14 +1085,14 @@ function createWormholes() {
   return wormholes;
 }
 
-// Create Sound Wave Plane - skip on mobile
+// Create Sound Wave Plane - enhanced for better quality
 function createSoundWavePlane() {
   if (!qualitySettings.useSoundWavePlane) return null;
   
   // Create a plane geometry with many segments for detailed wave movement
-  const planeGeometry = new THREE.PlaneGeometry(60, 40, 128, 128);
+  const planeGeometry = new THREE.PlaneGeometry(60, 40, 192, 128);
 
-  // Create shader material for the wave effect
+  // Create shader material for the wave effect - improved for better quality
   const waveMaterial = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
@@ -1021,7 +1101,7 @@ function createSoundWavePlane() {
       highlightColor: { value: new THREE.Color().setHSL(0.7, 0.9, 0.7) },
       lowColor: { value: new THREE.Color().setHSL(0.2, 0.8, 0.3) },
       amplitude: { value: 2.0 },
-      opacity: { value: 0.7 },
+      opacity: { value: 0.8 },
     },
     vertexShader: `
       uniform float time;
@@ -1042,12 +1122,13 @@ function createSoundWavePlane() {
         float audioValue2 = index < 127 ? audioData[index + 1] : audioData[index];
         float audioValue = mix(audioValue1, audioValue2, remainder);
         
-        // Create wave pattern
+        // Create wave pattern with improved detail
         float elevation = audioValue * amplitude;
         
         // Add some additional waves based on time
         elevation += sin(position.x * 3.0 + time * 0.5) * 0.2 * amplitude;
         elevation += sin(position.y * 2.0 + time * 0.3) * 0.1 * amplitude;
+        elevation += sin(position.x * 5.0 + position.y * 3.0 + time * 0.7) * 0.05 * amplitude;
         
         return elevation;
       }
@@ -1070,12 +1151,13 @@ function createSoundWavePlane() {
       uniform vec3 highlightColor;
       uniform vec3 lowColor;
       uniform float opacity;
+      uniform float time;
       
       varying vec2 vUv;
       varying float vElevation;
       
       void main() {
-        // Mix colors based on elevation
+        // Mix colors based on elevation with improved transitions
         vec3 color = baseColor;
         
         if (vElevation > 0.5) {
@@ -1086,12 +1168,18 @@ function createSoundWavePlane() {
           color = mix(baseColor, lowColor, t);
         }
         
-        // Add grid lines
+        // Add grid lines with glow effect
         float gridX = step(0.98, 1.0 - abs(fract(vUv.x * 20.0) * 2.0 - 1.0));
         float gridY = step(0.98, 1.0 - abs(fract(vUv.y * 20.0) * 2.0 - 1.0));
-        float grid = max(gridX, gridY) * 0.3;
+        float grid = max(gridX, gridY) * 0.5;
+        
+        // Add subtle animation to grid
+        grid *= 0.8 + sin(time * 2.0) * 0.2;
         
         color = mix(color, vec3(1.0), grid);
+        
+        // Add subtle color variation based on position
+        color += vec3(sin(vUv.x * 10.0 + time), sin(vUv.y * 8.0 - time * 0.5), sin((vUv.x + vUv.y) * 5.0 + time * 0.7)) * 0.05;
         
         // Edge glow effect
         float edge = 1.0 - max(abs(vUv.x - 0.5) * 2.0, abs(vUv.y - 0.5) * 2.0);
@@ -1118,15 +1206,15 @@ function createSoundWavePlane() {
   return plane;
 }
 
-// Enhanced Lighting Setup - REDUCED FOR MOBILE
+// Enhanced Lighting Setup - improved for better quality
 const ambientLight = new THREE.AmbientLight(0xffffff, isMobile ? 0.8 : 0.6);
 scene.add(ambientLight);
 
-// Reduce number of lights on mobile
-if (!isMobile) {
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  directionalLight.position.set(5, 10, 8);
-  directionalLight.castShadow = true;
+// Add lights on all devices for better quality
+const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 0.8 : 1.2);
+directionalLight.position.set(5, 10, 8);
+directionalLight.castShadow = !isMobile;
+if (directionalLight.castShadow) {
   directionalLight.shadow.mapSize.set(1024, 1024);
   directionalLight.shadow.camera.near = 1;
   directionalLight.shadow.camera.far = 50;
@@ -1135,26 +1223,31 @@ if (!isMobile) {
   directionalLight.shadow.camera.top = 10;
   directionalLight.shadow.camera.bottom = -10;
   directionalLight.shadow.bias = -0.0005;
-  scene.add(directionalLight);
+}
+scene.add(directionalLight);
 
-  const fillLight = new THREE.DirectionalLight(0xffffee, 3.5);
-  fillLight.position.set(-5, 5, 15);
-  scene.add(fillLight);
+const fillLight = new THREE.DirectionalLight(0xffffee, isMobile ? 1.5 : 3.5);
+fillLight.position.set(-5, 5, 15);
+scene.add(fillLight);
 
-  const spotLight = new THREE.SpotLight(0xffffff, 50, 100, 0.3, 0.5);
-  spotLight.position.set(0, 15, 0);
-  spotLight.castShadow = true;
+// Add some lights even on mobile for better quality
+const spotLight = new THREE.SpotLight(0xffffff, isMobile ? 20 : 50, 100, 0.3, 0.5);
+spotLight.position.set(0, 15, 0);
+spotLight.castShadow = !isMobile;
+if (spotLight.castShadow) {
   spotLight.shadow.bias = -0.0001;
-  scene.add(spotLight);
+}
+scene.add(spotLight);
 
-  const rimLight1 = new THREE.PointLight(0xff3300, 12, 3);
-  rimLight1.position.set(-10, 5, 0);
-  scene.add(rimLight1);
+const rimLight1 = new THREE.PointLight(0xff3300, isMobile ? 5 : 12, isMobile ? 2 : 3);
+rimLight1.position.set(-10, 5, 0);
+scene.add(rimLight1);
 
-  const rimLight2 = new THREE.PointLight(0x00aaff, 12, 2);
-  rimLight2.position.set(10, 5, 0);
-  scene.add(rimLight2);
+const rimLight2 = new THREE.PointLight(0x00aaff, isMobile ? 5 : 12, isMobile ? 1.5 : 2);
+rimLight2.position.set(10, 5, 0);
+scene.add(rimLight2);
 
+if (!isMobile) {
   const movingLight1 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5);
   movingLight1.position.set(0, 0, 0);
   scene.add(movingLight1);
@@ -1162,26 +1255,17 @@ if (!isMobile) {
   const movingLight2 = new THREE.PointLight(0xffffff, 1.0, 1.0, 0.5);
   movingLight2.position.set(0, 0, 0);
   scene.add(movingLight2);
-
-  const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, 1.0);
-  scene.add(hemiLight);
-
-  // Add a new light specifically for the model
-  const modelFillLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  modelFillLight.position.set(0, 3, 5);
-  scene.add(modelFillLight);
-} else {
-  // Just add a few essential lights for mobile
-  const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
-  mainLight.position.set(0, 10, 10);
-  scene.add(mainLight);
-  
-  const fillLight = new THREE.DirectionalLight(0xffffee, 1.0);
-  fillLight.position.set(-5, 5, 5);
-  scene.add(fillLight);
 }
 
-// Initialize scene elements - with mobile optimizations
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x404040, isMobile ? 0.5 : 1.0);
+scene.add(hemiLight);
+
+// Add a new light specifically for the model
+const modelFillLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 2.0);
+modelFillLight.position.set(0, 3, 5);
+scene.add(modelFillLight);
+
+// Initialize scene elements - with improved quality
 starField = createStarField();
 floatingCrystals = createFloatingCrystals();
 ring = createGlowingRing();
@@ -1191,19 +1275,20 @@ energyWaves = createEnergyWaves();
 asteroidBelts = createAsteroidBelts();
 wormholes = createWormholes();
 
-// Skip sound wave plane on mobile
+// Add sound wave plane on non-mobile
 if (qualitySettings.useSoundWavePlane) {
   soundWavePlane = createSoundWavePlane();
 }
 
-// Optimized Thruster Particles
+// Optimized Thruster Particles - enhanced for better quality
 function createThrusterParticles() {
-  // Reduce particle count on mobile
-  const thrusterCount = isMobile ? 50 : 100;
+  // Improved particle count for better quality
+  const thrusterCount = isMobile ? 80 : 150;
   const thrusterGeometry = new THREE.BufferGeometry();
   const thrusterPositions = new Float32Array(thrusterCount * 3);
   const thrusterVelocities = new Float32Array(thrusterCount * 3);
   const thrusterColors = new Float32Array(thrusterCount * 3);
+  const thrusterSizes = new Float32Array(thrusterCount);
 
   for (let i = 0; i < thrusterCount; i++) {
     thrusterPositions[i * 3] = (Math.random() - 0.5) * 0.1;
@@ -1218,17 +1303,54 @@ function createThrusterParticles() {
     thrusterColors[i * 3] = t * 1.0;
     thrusterColors[i * 3 + 1] = 0.5 + t * 0.5;
     thrusterColors[i * 3 + 2] = 1.0;
+    
+    // Varied particle sizes for better visual quality
+    thrusterSizes[i] = Math.random() * 0.05 + 0.03;
   }
 
   thrusterGeometry.setAttribute("position", new THREE.BufferAttribute(thrusterPositions, 3));
   thrusterGeometry.setAttribute("velocity", new THREE.BufferAttribute(thrusterVelocities, 3));
   thrusterGeometry.setAttribute("color", new THREE.BufferAttribute(thrusterColors, 3));
+  thrusterGeometry.setAttribute("size", new THREE.BufferAttribute(thrusterSizes, 1));
 
-  const thrusterMaterial = new THREE.PointsMaterial({
-    size: 0.05,
-    vertexColors: true,
+  // Enhanced shader for better quality
+  const thrusterMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      pixelRatio: { value: renderer.getPixelRatio() }
+    },
+    vertexShader: `
+      attribute vec3 color;
+      attribute vec3 velocity;
+      attribute float size;
+      uniform float time;
+      uniform float pixelRatio;
+      varying vec3 vColor;
+      
+      void main() {
+        vColor = color;
+        
+        // Pulse effect
+        float pulse = sin(time * 5.0 + position.z * 10.0) * 0.5 + 0.5;
+        gl_PointSize = size * pixelRatio * (1.0 + pulse * 0.5) * 50.0;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      
+      void main() {
+        float distanceToCenter = length(gl_PointCoord - vec2(0.5));
+        float strength = 1.0 - smoothstep(0.0, 0.5, distanceToCenter);
+        
+        // Add glow effect
+        vec3 glow = vColor * 1.5 * (1.0 - distanceToCenter * 2.0);
+        vec3 finalColor = mix(vColor, glow, 0.5);
+        
+        gl_FragColor = vec4(finalColor, strength);
+      }
+    `,
     transparent: true,
-    opacity: 0.8,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -1236,15 +1358,16 @@ function createThrusterParticles() {
   return new THREE.Points(thrusterGeometry, thrusterMaterial);
 }
 
-// Optimized Particle Burst - skip on mobile
+// Optimized Particle Burst - enhanced for better quality
 function createBurstParticles() {
   if (isMobile) return null;
   
   const burstGeometry = new THREE.BufferGeometry();
-  const burstCount = 100;
+  const burstCount = 150; // Increased for better quality
   const burstPositions = new Float32Array(burstCount * 3);
   const burstVelocities = new Float32Array(burstCount * 3);
   const burstColors = new Float32Array(burstCount * 3);
+  const burstSizes = new Float32Array(burstCount);
 
   for (let i = 0; i < burstCount; i++) {
     burstPositions[i * 3] = 0;
@@ -1263,18 +1386,55 @@ function createBurstParticles() {
     const color = new THREE.Color().setHSL(hue, 0.9, 0.6);
     burstColors[i * 3] = color.r;
     burstColors[i * 3 + 1] = color.g;
+      0.9, 0.6);
+    burstColors[i * 3] = color.r;
+    burstColors[i * 3 + 1] = color.g;
     burstColors[i * 3 + 2] = color.b;
+    
+    // Varied particle sizes for better visual quality
+    burstSizes[i] = Math.random() * 0.15 + 0.05;
   }
 
   burstGeometry.setAttribute("position", new THREE.BufferAttribute(burstPositions, 3));
   burstGeometry.setAttribute("velocity", new THREE.BufferAttribute(burstVelocities, 3));
   burstGeometry.setAttribute("color", new THREE.BufferAttribute(burstColors, 3));
+  burstGeometry.setAttribute("size", new THREE.BufferAttribute(burstSizes, 1));
 
-  const burstMaterial = new THREE.PointsMaterial({
-    size: 0.1,
-    vertexColors: true,
+  // Enhanced shader for better quality
+  const burstMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      pixelRatio: { value: renderer.getPixelRatio() }
+    },
+    vertexShader: `
+      attribute vec3 color;
+      attribute float size;
+      uniform float time;
+      uniform float pixelRatio;
+      varying vec3 vColor;
+      
+      void main() {
+        vColor = color;
+        float pulse = sin(time * 3.0) * 0.5 + 0.5;
+        gl_PointSize = size * pixelRatio * (1.0 + pulse * 0.3) * 60.0;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      
+      void main() {
+        float distanceToCenter = length(gl_PointCoord - vec2(0.5));
+        float strength = 1.0 - smoothstep(0.0, 0.5, distanceToCenter);
+        
+        // Add glow effect
+        vec3 glow = vColor * 1.5 * (1.0 - distanceToCenter * 2.0);
+        vec3 finalColor = mix(vColor, glow, 0.5);
+        
+        gl_FragColor = vec4(finalColor, strength);
+      }
+    `,
     transparent: true,
-    opacity: 0.8,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -1282,10 +1442,8 @@ function createBurstParticles() {
   return new THREE.Points(burstGeometry, burstMaterial);
 }
 
-// Optimized Post-Processing Setup - SKIP ON MOBILE
+// Optimized Post-Processing Setup - enhanced for better quality
 function setupPostProcessing() {
-  if (!qualitySettings.usePostProcessing) return;
-  
   composer = new EffectComposer(renderer);
 
   const renderPass = new RenderPass(scene, camera);
@@ -1293,7 +1451,7 @@ function setupPostProcessing() {
 
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.7, // bloom strength
+    isMobile ? 0.5 : 0.7, // bloom strength
     0.4, // Radius
     0.85, // Threshold
   );
@@ -1304,10 +1462,10 @@ function setupPostProcessing() {
   composer.addPass(rgbShiftPass);
 }
 
-// Load GLTF Model - with mobile optimizations
-const loader = new GLTFLoader().setPath("./public/collinship/");
+// Load GLTF Model - with improved quality
+const loader = new GLTFLoader();
 loader.load(
-  "collin.gltf",
+  "collinship/collin.gltf", // Fixed path to model
   (gltf) => {
     console.log("loading model");
     spaceship = gltf.scene; // Assign the entire scene to spaceship variable
@@ -1315,21 +1473,21 @@ loader.load(
     spaceship.traverse((child) => {
       if (child.isMesh) {
         if (child.material) {
-          // Simplified materials for mobile
+          // Enhanced materials for better quality
           if (isMobile) {
-            // Replace complex materials with basic materials on mobile
+            // Improved basic materials on mobile
             const color = child.material.color ? child.material.color.clone() : new THREE.Color(0xcccccc);
             child.material = new THREE.MeshBasicMaterial({
               color: color,
               transparent: true,
-              opacity: 0.9
+              opacity: 0.95
             });
           } else {
             child.material.metalness = 0.7;
-            child.material.roughness = 0.3;
-            child.material.envMapIntensity = 2.0;
+            child.material.roughness = 0.2; // Lower roughness for better reflections
+            child.material.envMapIntensity = 2.5;
             child.material.emissive = new THREE.Color(0x555555);
-            child.material.emissiveIntensity = 0.5;
+            child.material.emissiveIntensity = 0.8;
 
             // Brighten the base color if it exists
             if (child.material.color) {
@@ -1352,15 +1510,15 @@ loader.load(
     spaceship.scale.set(0.5, 0.5, 0.5);
     scene.add(spaceship);
 
-    // Add engine glow - simplified on mobile
-    const engineGlow = new THREE.PointLight(0x00aaff, isMobile ? 8 : 12, isMobile ? 4 : 6);
+    // Add engine glow - enhanced for better quality
+    const engineGlow = new THREE.PointLight(0x00aaff, isMobile ? 10 : 15, isMobile ? 5 : 8);
     engineGlow.position.set(0, 0.5, 2);
     spaceship.add(engineGlow);
 
     thrusterParticles = createThrusterParticles();
     spaceship.add(thrusterParticles);
 
-    // Enhanced model lighting - skip on mobile
+    // Enhanced model lighting - improved for better quality
     if (!isMobile) {
       const modelSpotlight = new THREE.SpotLight(0xffffff, 30, 20, 0.5, 0.5);
       modelSpotlight.position.set(0, 10, 5);
@@ -1380,6 +1538,12 @@ loader.load(
       const modelSideLight = new THREE.PointLight(0xffffee, 10, 10);
       modelSideLight.position.set(5, 2, 0);
       spaceship.add(modelSideLight);
+    } else {
+      // Add at least one spotlight for mobile
+      const modelLight = new THREE.SpotLight(0xffffff, 15, 15, 0.6, 0.5);
+      modelLight.position.set(0, 5, 5);
+      modelLight.target = spaceship;
+      scene.add(modelLight);
     }
 
     const progressContainer = document.getElementById("progress-container");
@@ -1434,8 +1598,11 @@ window.addEventListener("resize", () => {
 
   // Resize visualizer canvas if it exists
   if (visualizerCanvas) {
-    visualizerCanvas.width = visualizerCanvas.clientWidth;
-    visualizerCanvas.height = visualizerCanvas.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = visualizerCanvas.getBoundingClientRect();
+    visualizerCanvas.width = rect.width * dpr;
+    visualizerCanvas.height = rect.height * dpr;
+    visualizerContext.scale(dpr, dpr);
   }
 });
 
@@ -1504,7 +1671,7 @@ function triggerEnergyWave() {
 
 // Pulse Wormholes
 function pulseWormholes() {
-  if (!wormholes || wormholes.length === 0 || isMobile) return;
+  if (!wormholes || wormholes.length === 0) return;
 
   wormholes.forEach((wormhole) => {
     if (!wormhole.pulsing) {
@@ -1516,7 +1683,7 @@ function pulseWormholes() {
       }
       
       if (wormhole.light) {
-        wormhole.light.intensity = 5;
+        wormhole.light.intensity = isMobile ? 3 : 5;
       }
     }
   });
@@ -1552,7 +1719,7 @@ function animate() {
       for (let i = 0; i < skybox.material.length; i++) {
         const material = skybox.material[i];
         // Pulse opacity with bass
-        material.opacity = 0.3 + bassAvg * 0.3;
+        material.opacity = 0.5 + bassAvg * 0.3;
 
         // Change color with time and audio
         const hue = (elapsedTime * 0.02 + bassAvg * 0.2) % 1;
@@ -1584,14 +1751,15 @@ function animate() {
         const hue = (i / barCount + elapsedTime * 0.05) % 1;
         bar.material.color.setHSL(hue, 0.8, 0.5 + audioValue * 0.5);
         
-        // Only update emissive for non-mobile
+        // Update emissive for better quality
         if (!isMobile && bar.material.emissive) {
           bar.material.emissive.setHSL(hue, 0.9, 0.3 + audioValue * 0.3);
+          bar.material.emissiveIntensity = 1.0 + audioValue * 2.0;
         }
       }
     }
 
-    // Update asteroid belts - simplified for mobile
+    // Update asteroid belts - improved for better quality
     if (asteroidBelts && asteroidBelts.length > 0) {
       asteroidBelts.forEach((belt) => {
         // Rotate the entire belt group
@@ -1617,7 +1785,7 @@ function animate() {
           belt.core.scale.set(scale, scale, scale);
         }
 
-        // Update individual asteroids - limit updates on mobile
+        // Update individual asteroids - optimized for performance
         const updateFrequency = isMobile ? 5 : 1; // Only update every 5th frame on mobile
         if (Math.floor(elapsedTime * 60) % updateFrequency === 0) {
           belt.group.children.forEach((child) => {
@@ -1632,10 +1800,10 @@ function animate() {
       });
     }
 
-    // Update wormholes - simplified for mobile
+    // Update wormholes - improved for better quality
     if (wormholes && wormholes.length > 0) {
       wormholes.forEach((wormhole) => {
-        // Update shader time for non-mobile
+        // Update shader time for better animation
         if (!isMobile && wormhole.material.uniforms) {
           wormhole.material.uniforms.time.value = elapsedTime;
         }
@@ -1643,17 +1811,17 @@ function animate() {
         // Rotate wormhole
         wormhole.group.rotateOnAxis(wormhole.rotationAxis, wormhole.rotationSpeed);
 
-        // Handle pulsing effect for non-mobile
-        if (!isMobile && wormhole.pulsing) {
+        // Handle pulsing effect for better quality
+        if (wormhole.pulsing) {
           wormhole.pulseTime += 0.05;
 
           if (wormhole.pulseTime >= 1.0) {
             wormhole.pulsing = false;
-            if (wormhole.material.uniforms) {
+            if (!isMobile && wormhole.material.uniforms) {
               wormhole.material.uniforms.pulseIntensity.value = 0.0;
             }
             if (wormhole.light) {
-              wormhole.light.intensity = 2;
+              wormhole.light.intensity = isMobile ? 1.5 : 2;
             }
           }
         }
@@ -1662,7 +1830,7 @@ function animate() {
         const trebleEffect = trebleAvg * 0.5;
         wormhole.tunnel.scale.set(1 + trebleEffect, 1 + trebleEffect, 1 + trebleEffect);
 
-        // Slowly change colors over time for non-mobile
+        // Slowly change colors over time for better quality
         if (!isMobile && wormhole.material.uniforms) {
           const hue1 = (elapsedTime * 0.03) % 1;
           const hue2 = (elapsedTime * 0.02 + 0.5) % 1;
@@ -1676,10 +1844,47 @@ function animate() {
           const hue = (elapsedTime * 0.03) % 1;
           wormhole.tunnel.material.color.setHSL(hue, 0.8, 0.5);
         }
+        
+        // Update particles for better quality
+        if (wormhole.particles && wormhole.particles.geometry.attributes.position) {
+          const positions = wormhole.particles.geometry.attributes.position.array;
+          const count = positions.length / 3;
+          
+          // Only update a subset of particles each frame for performance
+          const updateCount = Math.min(count, isMobile ? 50 : 200);
+          const startIdx = Math.floor(Math.random() * (count - updateCount));
+          
+          for (let i = startIdx; i < startIdx + updateCount; i++) {
+            // Add subtle movement to particles
+            positions[i * 3] += (Math.random() - 0.5) * 0.01;
+            positions[i * 3 + 1] += (Math.random() - 0.5) * 0.01;
+            positions[i * 3 + 2] += (Math.random() - 0.5) * 0.01;
+            
+            // Keep particles within bounds
+            const dist = Math.sqrt(
+              positions[i * 3] * positions[i * 3] + 
+              positions[i * 3 + 1] * positions[i * 3 + 1] + 
+              positions[i * 3 + 2] * positions[i * 3 + 2]
+            );
+            
+            if (dist > 6) {
+              // Reset particle position
+              const angle1 = Math.random() * Math.PI * 2;
+              const angle2 = Math.random() * Math.PI * 2;
+              const radius = 4 + (Math.random() - 0.5) * 1.5;
+              
+              positions[i * 3] = (radius + Math.cos(angle2) * 1.5) * Math.cos(angle1);
+              positions[i * 3 + 1] = (radius + Math.cos(angle2) * 1.5) * Math.sin(angle1);
+              positions[i * 3 + 2] = Math.sin(angle2) * 1.5;
+            }
+          }
+          
+          wormhole.particles.geometry.attributes.position.needsUpdate = true;
+        }
       });
     }
 
-    // Update sound wave plane - skip on mobile
+    // Update sound wave plane - improved for better quality
     if (soundWavePlane && soundWavePlane.material.uniforms) {
       soundWavePlane.material.uniforms.time.value = elapsedTime;
 
@@ -1714,8 +1919,8 @@ function animate() {
       soundWavePlane.rotation.z += 0.001;
     }
 
-    // Update energy waves - skip on mobile
-    if (!isMobile && energyWaves && energyWaves.length > 0) {
+    // Update energy waves - improved for better quality
+    if (energyWaves && energyWaves.length > 0) {
       energyWaves.forEach((wave) => {
         if (wave.active) {
           wave.progress += wave.speed * 0.01;
@@ -1723,7 +1928,14 @@ function animate() {
           wave.mesh.scale.set(scale, scale, scale);
 
           // Fade out as it expands
-          wave.mesh.material.opacity = 0.7 * (1 - wave.progress);
+          wave.mesh.material.opacity = 0.8 * (1 - wave.progress);
+
+          // Add color variation for better quality
+          const hue = (elapsedTime * 0.1 + wave.progress * 0.5) % 1;
+          wave.mesh.material.color.setHSL(hue, 0.8, 0.5);
+          if (wave.mesh.material.emissive) {
+            wave.mesh.material.emissive.setHSL((hue + 0.5) % 1, 0.9, 0.3);
+          }
 
           // Reset when complete
           if (wave.progress >= 1) {
@@ -1734,17 +1946,21 @@ function animate() {
       });
     }
 
-    // Update lightning effects - skip on mobile
-    if (!isMobile && lightningEffects && lightningEffects.length > 0) {
+    // Update lightning effects - improved for better quality
+    if (lightningEffects && lightningEffects.length > 0) {
       for (let i = lightningEffects.length - 1; i >= 0; i--) {
         const lightning = lightningEffects[i];
         lightning.life -= lightning.decay;
 
         if (lightning.life <= 0) {
           scene.remove(lightning.mesh);
+          if (lightning.light) scene.remove(lightning.light);
           lightningEffects.splice(i, 1);
         } else {
           lightning.mesh.material.opacity = lightning.life;
+          if (lightning.light) {
+            lightning.light.intensity = 5 * lightning.life;
+          }
         }
       }
     }
@@ -1759,34 +1975,41 @@ function animate() {
       // Make spaceship bounce slightly with the beat
       spaceship.position.y = 1.05 + bassAvg * 0.2;
 
-      if (thrusterParticles && thrusterParticles.geometry.attributes.position) {
-        const positions = thrusterParticles.geometry.attributes.position.array;
-        const velocities = thrusterParticles.geometry.attributes.velocity.array;
-        const colors = thrusterParticles.geometry.attributes.color.array;
-
-        // On mobile, update fewer particles per frame
-        const updateCount = isMobile ? Math.min(positions.length / 3, 10) : positions.length / 3;
-        const startIdx = Math.floor(Math.random() * (positions.length / 3 - updateCount));
-
-        for (let i = startIdx; i < startIdx + updateCount; i++) {
-          positions[i * 3] += velocities[i * 3];
-          positions[i * 3 + 1] += velocities[i * 3 + 1];
-          positions[i * 3 + 2] += velocities[i * 3 + 2];
-
-          if (positions[i * 3 + 2] < -2) {
-            positions[i * 3] = (Math.random() - 0.5) * 0.1;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 0.1;
-            positions[i * 3 + 2] = -Math.random() * 0.5;
-
-            const t = Math.random();
-            colors[i * 3] = t * 1.0;
-            colors[i * 3 + 1] = 0.5 + t * 0.5;
-            colors[i * 3 + 2] = 1.0;
-          }
+      if (thrusterParticles) {
+        // Update thruster particles shader time for better animation
+        if (thrusterParticles.material.uniforms) {
+          thrusterParticles.material.uniforms.time.value = elapsedTime;
         }
+        
+        if (thrusterParticles.geometry.attributes.position) {
+          const positions = thrusterParticles.geometry.attributes.position.array;
+          const velocities = thrusterParticles.geometry.attributes.velocity.array;
+          const colors = thrusterParticles.geometry.attributes.color.array;
 
-        thrusterParticles.geometry.attributes.position.needsUpdate = true;
-        thrusterParticles.geometry.attributes.color.needsUpdate = true;
+          // On mobile, update fewer particles per frame
+          const updateCount = isMobile ? Math.min(positions.length / 3, 20) : positions.length / 3;
+          const startIdx = Math.floor(Math.random() * (positions.length / 3 - updateCount));
+
+          for (let i = startIdx; i < startIdx + updateCount; i++) {
+            positions[i * 3] += velocities[i * 3];
+            positions[i * 3 + 1] += velocities[i * 3 + 1];
+            positions[i * 3 + 2] += velocities[i * 3 + 2];
+
+            if (positions[i * 3 + 2] < -2) {
+              positions[i * 3] = (Math.random() - 0.5) * 0.1;
+              positions[i * 3 + 1] = (Math.random() - 0.5) * 0.1;
+              positions[i * 3 + 2] = -Math.random() * 0.5;
+
+              const t = Math.random();
+              colors[i * 3] = t * 1.0;
+              colors[i * 3 + 1] = 0.5 + t * 0.5;
+              colors[i * 3 + 2] = 1.0;
+            }
+          }
+
+          thrusterParticles.geometry.attributes.position.needsUpdate = true;
+          thrusterParticles.geometry.attributes.color.needsUpdate = true;
+        }
       }
     }
 
@@ -1914,7 +2137,7 @@ function animate() {
         }
       }
 
-      if (!isMobile && ring.children.length > 2) {
+      if (ring.children.length > 2) {
         const ringLight = ring.children[2];
         if (ringLight) {
           const bassValue = bassAvg || 0;
@@ -1925,42 +2148,44 @@ function animate() {
       }
     }
 
-    // Make lights react to audio - skip most on mobile
-    if (!isMobile) {
-      // These are the non-mobile lights
-      const spotLights = scene.children.filter(child => child instanceof THREE.SpotLight);
-      if (spotLights.length > 0) {
-        const spotLight = spotLights[0];
-        spotLight.intensity = 30 + Math.sin(elapsedTime) * 5 + trebleAvg * 20;
-        const spotHue = (elapsedTime * 0.02 + trebleAvg * 0.1) % 1;
-        spotLight.color.setHSL(spotHue, 0.5, 0.6);
-      }
+    // Make lights react to audio
+    const spotLights = scene.children.filter(child => child instanceof THREE.SpotLight);
+    if (spotLights.length > 0) {
+      const spotLight = spotLights[0];
+      spotLight.intensity = 30 + Math.sin(elapsedTime) * 5 + trebleAvg * 20;
+      const spotHue = (elapsedTime * 0.02 + trebleAvg * 0.1) % 1;
+      spotLight.color.setHSL(spotHue, 0.5, 0.6);
+    }
 
-      // Find and update moving lights
-      const movingLights = scene.children.filter(child => 
-        child instanceof THREE.PointLight && 
-        child !== ring?.children[2]
-      );
+    // Find and update moving lights
+    const movingLights = scene.children.filter(child => 
+      child instanceof THREE.PointLight && 
+      child !== ring?.children[2]
+    );
+    
+    if (movingLights.length >= 2) {
+      const movingLight1 = movingLights[0];
+      const movingLight2 = movingLights[1];
       
-      if (movingLights.length >= 2) {
-        const movingLight1 = movingLights[0];
-        const movingLight2 = movingLights[1];
-        
-        const movingAngle1 = elapsedTime * 0.5;
-        movingLight1.position.x = Math.sin(movingAngle1) * 10;
-        movingLight1.position.y = 5 + Math.sin(elapsedTime * 0.7) * 2 + midAvg * 3;
-        movingLight1.position.z = Math.cos(movingAngle1) * 10;
-        movingLight1.intensity = 0.5 + bassAvg * 2;
+      const movingAngle1 = elapsedTime * 0.5;
+      movingLight1.position.x = Math.sin(movingAngle1) * 10;
+      movingLight1.position.y = 5 + Math.sin(elapsedTime * 0.7) * 2 + midAvg * 3;
+      movingLight1.position.z = Math.cos(movingAngle1) * 10;
+      movingLight1.intensity = 0.5 + bassAvg * 2;
 
-        const movingAngle2 = elapsedTime * 0.5 + Math.PI;
-        movingLight2.position.x = Math.sin(movingAngle2) * 10;
-        movingLight2.position.y = 5 + Math.cos(elapsedTime * 0.7) * 2 + trebleAvg * 3;
-        movingLight2.position.z = Math.cos(movingAngle2) * 10;
-        movingLight2.intensity = 0.5 + trebleAvg * 2;
-      }
+      const movingAngle2 = elapsedTime * 0.5 + Math.PI;
+      movingLight2.position.x = Math.sin(movingAngle2) * 10;
+      movingLight2.position.y = 5 + Math.cos(elapsedTime * 0.7) * 2 + trebleAvg * 3;
+      movingLight2.position.z = Math.cos(movingAngle2) * 10;
+      movingLight2.intensity = 0.5 + trebleAvg * 2;
     }
 
     if (!isMobile && burstParticles && burstParticles.geometry.attributes.position) {
+      // Update burst particles shader time for better animation
+      if (burstParticles.material.uniforms) {
+        burstParticles.material.uniforms.time.value = elapsedTime;
+      }
+      
       const positions = burstParticles.geometry.attributes.position.array;
       const velocities = burstParticles.geometry.attributes.velocity.array;
 
